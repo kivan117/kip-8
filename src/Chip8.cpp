@@ -16,17 +16,16 @@ Chip8::~Chip8()
 void Chip8::Reset() {
 	LOG_TRACE("System reset.");
 	srand((unsigned int)std::chrono::system_clock::now().time_since_epoch().count());
-
-	if (mode == SYSTEM_MODE::SUPER_CHIP)
-		for (int i = 0; i <= RamLimit; i++)
-			Memory[i] = rand() & 0xFF;
-	else
-		std::fill_n(Memory, RamLimit + 1, 0);
+	
+	ResetMemory(mode == SYSTEM_MODE::SUPER_CHIP);
+	
 	memcpy(&Memory[0x00], &Font[0], 80); //normal font. 5 bytes per character, 16 characters
 	memcpy(&Memory[0x50], &LargeFont[0], 160); //large font. 10 bytes per character, 16 characters
-	memcpy(&Memory[0x200], &LogoRom[0], 97);
+	memcpy(&Memory[0x200], &LogoRom[0], 97); //load our default kip-8 logo rom on system reset
+	
 	std::fill_n(FrameBuffer, 128*64, 0);
 	std::fill_n(PreviousFramebuffer, 128 * 64, 0);
+	
 	std::fill_n(Keys, 16, 0);
 
 	sp = -1;
@@ -47,10 +46,8 @@ void Chip8::Reset() {
 	res.hires = false;
 	active_plane = 1;
 	screen_dirty = true;
-	//SetScreenDirty(0, 0, res.base_width, res.base_height);
 	SetScreenDirty();
 	SetWipeScreen();
-	start_beeper = false;
 	UnHalt();
 
 	return;
@@ -85,6 +82,15 @@ void Chip8::Run(uint16_t cycles) {
 	return;
 }
 
+void Chip8::ResetMemory(bool randomize)
+{
+	if (randomize)
+		for (int i = 0x200; i <= RamLimit; i++)
+			Memory[i] = rand() & 0xFF;
+	else
+		std::fill_n(&Memory[0x200], RamLimit - 0x200 + 1, 0);
+}
+
 uint16_t Chip8::Fetch(uint16_t location) {
 	uint8_t upper_byte = Memory[location];
 	uint8_t lower_byte = Memory[location + 1];
@@ -92,56 +98,14 @@ uint16_t Chip8::Fetch(uint16_t location) {
 	uint16_t op = (uint16_t)(upper_byte << 8 | lower_byte);
 	return op;
 }
-void Chip8::Load(std::string filename)
+void Chip8::Load(const std::vector<unsigned char> &buffer)
 {
-	LOG_INFO("Loading new file: {}", filename);
-	std::ifstream ifd(filename, std::ios::binary | std::ios::ate);
-	if (!ifd.good())
+	for (auto it = 0; it < buffer.size(); it++)
 	{
-		LOG_ERROR("File did not open correctly!: {}", filename.c_str());
-		return;
+		Memory[0x200 + it] = (uint8_t)buffer[it];
 	}
-	size_t size = ifd.tellg();
-	ifd.seekg(0, std::ios::beg);
-
-	if(0x1FF + size >= RamLimit) //game is too big or possibly not even a chip-8 game
-	{
-		LOG_ERROR("File too large! {}", filename.c_str());
-		return;
-	}
-	if (mode == SYSTEM_MODE::SUPER_CHIP)
-		for (int i = 0x200; i <= RamLimit; i++)
-			Memory[i] = rand() & 0xFF;
-	else
-		std::fill_n(&Memory[0x200], RamLimit - 0x200 + 1, 0);
-	
-	ifd.read((char*)&Memory[0x200], size);
-	ifd.close();
-	if (mode == SYSTEM_MODE::SUPER_CHIP)
-	{
-		filename += ".rpl";
-		ifd.open(filename, std::ios::binary | std::ios::ate);
-		if (!ifd.good())
-		{
-			LOG_WARN("Unable to open RPL file for reading: {}", filename.c_str());
-			return;
-		}
-		size = ifd.tellg();
-		ifd.seekg(0, std::ios::beg);
-		ifd.read((char*)&RPLMemory[0], std::min(8, (int)size));
-		ifd.close();
-	}
-}
-
-uint8_t Chip8::GetPixel(uint16_t px)
-{
-	if (px >= (res.base_height * res.base_width))
-	{
-		LOG_ERROR("Access to framebuffer is out of bounds:\n\tIndex: {:04X}\n\tPC: {:04X}", px, pc - 2);
-		Halt();
-		return 0;
-	}
-	return FrameBuffer[px];
+	//TODO: make this load from memory given only a buffer
+	//The randomize memory function should not occur here honestly, this should just load
 }
 
 uint8_t* Chip8::GetVRAM()
@@ -162,14 +126,7 @@ void Chip8::SaveCurrentVRAM()
 void Chip8::SetScreenDirty()
 {
 	screen_dirty = true;
-	//dirty_pix.emplace_back(0, 0, res.base_width, res.base_height);
 }
-
-//void Chip8::SetScreenDirty(uint8_t x, uint8_t y, uint8_t w, uint8_t h)
-//{
-//	screen_dirty = true;
-//	dirty_pix.emplace_back(x, y, w, h);
-//}
 
 bool Chip8::ToggleDebugStepping()
 {
@@ -224,25 +181,12 @@ void Chip8::SetSystemMode(SYSTEM_MODE newmode)
 			
 			break;
 		}
-		//case(SYSTEM_MODE::DREAM_6800):
-		//{
-		//	LOG_INFO("Set system mode DREAM 6800");
-		//	//TODO: implement some DREAM 6800 stuff
-		//	break;
-		//}
-		//case(SYSTEM_MODE::ETI_660):
-		//{
-		//	LOG_INFO("Set system mode ETI-660");
-		//	//TODO: implement some ETI-660 stuff
-		//	break;
-		//}
 		case(SYSTEM_MODE::SUPER_CHIP):
 		{
 			LOG_INFO("Set system mode SUPER-CHIP");
 			res.base_height = 64;
 			res.base_width = 128;
 			res.hires = false;
-			//no special quirks to set, this is essentially the default
 			StackSize = 16;
 			RamLimit = 0x0FFF;
 			break;
@@ -250,8 +194,6 @@ void Chip8::SetSystemMode(SYSTEM_MODE newmode)
 		case(SYSTEM_MODE::XO_CHIP):
 		{
 			LOG_INFO("Set system mode XO-Chip");
-			//quirk setup should be similar to VIP
-			//XO-Chip has more Ram available though and  extra instructions + features
 			res.base_height = 64;
 			res.base_width = 128;
 			res.hires = false;
@@ -292,7 +234,7 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 			LOG_TRACE("[{:04X}] {:04X}\t00CN\tSCHIP  \tScroll down N", pc - 2, opcode);
 			if (mode == SYSTEM_MODE::CHIP_8)
 			{
-				LOG_ERROR("Opcode not valid in CHIP-8 Mode: {:04X}", opcode); //<< std::setw(4) << std::setfill('0') << std::hex << std::uppercase << opcode << std::endl;
+				LOG_ERROR("Opcode not valid in CHIP-8 Mode: {:04X}", opcode);
 			}
 			else
 			{
@@ -328,11 +270,11 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 			LOG_TRACE("[{:04X}] {:04X}\t00DN\tXO-CHIP\tScroll up N", pc - 2, opcode);
 			if (mode == SYSTEM_MODE::CHIP_8)
 			{
-				LOG_ERROR("Opcode not valid in CHIP-8 Mode: {:04X}", opcode); //<< std::setw(4) << std::setfill('0') << std::hex << std::uppercase << opcode << std::endl;
+				LOG_ERROR("Opcode not valid in CHIP-8 Mode: {:04X}", opcode);
 			}
 			else if(mode == SYSTEM_MODE::SUPER_CHIP)
 			{
-				LOG_ERROR("Opcode not valid in SUPER-CHIP Mode: {:04X}", opcode); //<< std::setw(4) << std::setfill('0') << std::hex << std::uppercase << opcode << std::endl;
+				LOG_ERROR("Opcode not valid in SUPER-CHIP Mode: {:04X}", opcode);
 			}
 			else
 			{
@@ -408,13 +350,6 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 				else
 				{
 					SetScreenDirty();
-					//for (uint8_t y = 0; y < res.base_height; y++)
-					//{
-					//	uint8_t* src_buffer = &FrameBuffer[y * res.base_width];
-					//	uint8_t* dest_buffer = &FrameBuffer[(y * res.base_width) + 4];
-					//	memcpy(dest_buffer, src_buffer, res.base_width - 4);
-					//	std::fill_n(src_buffer, 4, 0);
-					//}
 					for (uint8_t y = 0; y < res.base_height; y++)
 					{
 						for (int8_t x = res.base_width - 1; x >= 4; x--)
@@ -1110,7 +1045,6 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 		case(0x18): //FX18, Set the sound timer to the value of register VX
 			LOG_TRACE("[{:04X}] {:04X}\tFX18\tCHIP-8 \tSet Sound Timer = VX", pc - 2, opcode);
 			SetSoundTimer(regs.v[op_nibs[1]]);
-			SetBeeper();			
 			break;
 		case(0x1E): //FX1E, Add the value stored in register VX to register I
 			regs.i += regs.v[op_nibs[1]];

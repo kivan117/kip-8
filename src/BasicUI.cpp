@@ -1,34 +1,25 @@
-#include "DebugUI.h"
+#include "BasicUI.h"
 
-void DebugUI::Init()
+void BasicUI::Init()
 {
     ImGui::CreateContext();
-	ImGui::StyleColorsDark();
-	ImGui_ImplSDL2_InitForSDL(fe_State->window);
+    ImGui::StyleColorsDark();
+    ImGui_ImplSDL2_InitForSDL(fe_State->window);
     int win_w, win_h;
     SDL_GetWindowSize(fe_State->window, &win_w, &win_h);
-	ImGuiSDL::Initialize(fe_State->renderer, win_w, win_h);
-    chip8_ram_editor.Cols = 32;
-    chip8_vram_editor.Cols = 64;
-    //terminal_log = new ImTerm::terminal<ImTerm_Commands>(cmd_struct);
-    //terminal_log->set_min_log_level(ImTerm::message::severity::trace);
-    //Logger::GetClientLogger()->sinks().push_back(terminal_log->get_terminal_helper());
-    //Logger::GetClientLogger()->set_level(spdlog::level::info);
-
-	return;
+    ImGuiSDL::Initialize(fe_State->renderer, win_w, win_h);
+    return;
 }
 
 
-void DebugUI::Deinit()
+void BasicUI::Deinit()
 {
-    Logger::GetClientLogger()->set_level(spdlog::level::warn);
-	ImGuiSDL::Deinitialize();
-	ImGui::DestroyContext();
+    ImGuiSDL::Deinitialize();
+    ImGui::DestroyContext();
 }
 
 static void HelpMarker(const char* desc)
 {
-    //ImGui::TextDisabled("(?)   ");
     if (ImGui::IsItemHovered())
     {
         ImGui::BeginTooltip();
@@ -39,306 +30,45 @@ static void HelpMarker(const char* desc)
     }
 }
 
-void DebugUI::Draw()
+void BasicUI::Draw()
 {
-	ImGui_ImplSDL2_NewFrame(fe_State->window);
-	ImGui::NewFrame();
+    ImGui_ImplSDL2_NewFrame(fe_State->window);
+    ImGui::NewFrame();
 
-	//ImGui::ShowDemoWindow();
-
-    if (show_menu_bar)
+    if (SDL_GetMouseFocus())
         ShowMenuBar();
 
-    if (show_display)
-        ShowDisplayWindow(&show_display);
-
-    if (show_audio)
-        ShowAudioWindow(&show_audio);
-
-    if (show_vram)
-        ShowVRAMWindow(&show_vram);
-
-    if (show_ram)
-        ShowRAMWindow(&show_ram);
-
-    if(show_regs)
-        ShowCPUEditor(&show_regs);
-
-    if (show_stack)
-        ShowStackWindow(&show_stack);
-
-    //if(show_log)
-    //    show_log = terminal_log->show();
-
-	SDL_Rect windowRect = { 0, 0, 1, 1 };
-	SDL_RenderSetClipRect(fe_State->renderer, &windowRect); //fixes an SDL bug for D3D backend
-	SDL_SetRenderDrawColor(fe_State->renderer, 114, 144, 154, 255);
-	SDL_RenderClear(fe_State->renderer);
-
-	ImGui::Render();
-	ImGuiSDL::Render(ImGui::GetDrawData());
+    ImGui::Render();
+    ImGuiSDL::Render(ImGui::GetDrawData());
 }
 
-void DebugUI::HandleInput(SDL_Event* event)
+void BasicUI::HandleInput(SDL_Event* event)
 {
-	ImGui_ImplSDL2_ProcessEvent(event);
+    ImGui_ImplSDL2_ProcessEvent(event);
 }
 
-bool DebugUI::WantCaptureKB()
+bool BasicUI::WantCaptureKB()
 {
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	fe_State->capture_KB = io.WantCaptureKeyboard;
-	return fe_State->capture_KB;
-	return fe_State->capture_KB;
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    fe_State->capture_KB = io.WantCaptureKeyboard;
+    return fe_State->capture_KB;
+    return fe_State->capture_KB;
 }
 
-bool DebugUI::WantCaptureMouse()
+bool BasicUI::WantCaptureMouse()
 {
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	fe_State->capture_Mouse = io.WantCaptureMouse;
-	return fe_State->capture_Mouse;
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    fe_State->capture_Mouse = io.WantCaptureMouse;
+    return fe_State->capture_Mouse;
 }
 
-// Demonstrate create a simple property editor.
-void DebugUI::ShowCPUEditor(bool* p_open)
-{
-    ImGui::SetNextWindowSize(ImVec2(440, 400), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("CPU:", p_open))
-    {
-        ImGui::End();
-        return;
-    }
-
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-    ImGui::Columns(1);
-    ImGui::Separator();
-
-    // Text and Tree nodes are less high than framed widgets, using AlignTextToFramePadding() we add vertical spacing to make the tree lines equal high.
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted("Registers");
-    ImGui::Separator();
-    ImGui::Columns(4);
-    //static float placeholder_members[8] = { 0.0f, 0.0f, 1.0f, 3.1416f, 100.0f, 999.0f };
-    for (int i = 0; i < 16; i++)
-    {
-        ImGui::PushID(i); // Use field index as identifier.
-        // Here we use a TreeNode to highlight on hover (we could use e.g. Selectable as well)
-        ImGui::AlignTextToFramePadding();
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Bullet;
-        //ImGui::TreeNodeEx("Reg", flags, "V%X", i);
-        ImGui::Text("V%X:", i);
-        ImGui::SameLine();
-        //ImGui::NextColumn();
-        ImGui::SetNextItemWidth(30);
-        ImGui::InputScalar("##value", ImGuiDataType_U8, fe_State->core->GetRegV(i), NULL, NULL, "%02X");
-        ImGui::NextColumn();
-        ImGui::PopID();
-    }
-
-    ImGui::Columns(1);
-    ImGui::Separator();
-    ImGui::PopStyleVar();
-
-    ImGui::PushID(16); // Use field index as identifier.
-    // Here we use a TreeNode to highlight on hover (we could use e.g. Selectable as well)
-    ImGui::AlignTextToFramePadding();
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Bullet;
-    //ImGui::TreeNodeEx("Reg", flags, "I");
-    ImGui::TextUnformatted("I:  ");
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(40);
-    ImGui::InputScalar("##value", ImGuiDataType_U16, fe_State->core->GetRegI(), NULL, NULL, "%04X");
-    ImGui::NextColumn();
-    ImGui::PopID();
-    ImGui::PushID(17);
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted("PC: ");
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(40);
-    ImGui::InputScalar("##value", ImGuiDataType_U16, fe_State->core->GetPC(), NULL, NULL, "%04X");
-    ImGui::NextColumn();
-    ImGui::PopID();
-    ImGui::Columns(1);
-    ImGui::Separator();
-    if (ImGui::Button("Step"))
-    {
-        if (!fe_State->core->GetDebugStepping())
-            fe_State->core->ToggleDebugStepping();
-        fe_State->core->Step();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Reset"))
-    {
-        fe_State->core->Reset();
-    }
-    ImGui::SameLine();
-    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !fe_State->core->GetDebugStepping());
-    if (ImGui::Button("Run"))
-    {
-        fe_State->core->ToggleDebugStepping();
-    }
-    ImGui::PopItemFlag();
-    ImGui::End();
-}
-
-
-void DebugUI::ShowDisplayWindow(bool* p_open)
-{
-    unsigned int zoom = fe_State->resolution_Zoom;
-    unsigned int res_w = fe_State->core->res.base_width;
-    unsigned int res_h = fe_State->core->res.base_height;
-    //ImGui::ImGuiWindowFlags_AlwaysAutoResize;
-    //ImGui::SetNextWindowSize(ImVec2((float)((res_w * zoom) + res_w + 1), (float)((res_h * zoom) + res_h + 1)), ImGuiCond_Always);
-    ImGui::SetNextWindowContentSize(ImVec2((float)((res_w * zoom) + res_w + 1), (float)((res_h * zoom) + res_h + 1)));
-    if (!ImGui::Begin("Display", p_open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize))
-    {
-        ImGui::End();
-        return;
-    }
-    //ImGui::Image(fe_State->screen_Texture, ImVec2((float)((res_w * zoom) + res_w + 1),(float)((res_h * zoom) + res_h + 1)));
-    ImGui::Image(fe_State->screen_Texture, ImGui::GetContentRegionAvail());
-    ImGui::End();
-
-}
-
-void DebugUI::ShowRAMWindow(bool* p_open)
-{
-    ImGui::SetNextWindowSize(ImVec2(1000, 650), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("RAM", p_open))
-    {
-        ImGui::End();
-        return;
-    }
-    chip8_ram_editor.DrawContents(fe_State->core->GetRAM(), sizeof(uint8_t) * (((unsigned long long)fe_State->core->GetRAMLimit())+1), 0); //TODO: don't hard code ram size
-    ImGui::End();
-}
-
-void DebugUI::ShowVRAMWindow(bool* p_open)
-{
-    ImGui::SetNextWindowSize(ImVec2(1385, 490), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("VRAM", p_open))
-    {
-        ImGui::End();
-        return;
-    }
-    static unsigned int res_w = fe_State->core->res.base_width;
-    static unsigned int res_h = fe_State->core->res.base_height;
-    chip8_vram_editor.DrawContents(fe_State->core->GetVRAM(), sizeof(uint8_t) * res_w * res_h, 0);
-    ImGui::End();
-}
-
-void DebugUI::ShowStackWindow(bool* p_open)
-{
-    ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Stack", p_open))
-    {
-        ImGui::End();
-        return;
-    }
-    ImGui::TextUnformatted("SP: ");
-    ImGui::SameLine();
-    ImGui::InputScalar("##value", ImGuiDataType_S8, (fe_State->core->GetSP()), NULL, NULL, "%04d");
-    ImGui::Separator();
-
-    ImGui::PushID(-1); // Use field index as identifier.
-        // Here we use a TreeNode to highlight on hover (we could use e.g. Selectable as well)
-    ImGui::AlignTextToFramePadding();
-    if (*(fe_State->core->GetSP()) == -1)
-        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.1f, 1.0f), "Empty");
-    else
-        ImGui::TextDisabled("-----");
-    ImGui::PopID();
-    ImGui::Columns(2);
-    for (int i = 0; i < fe_State->core->GetStackSize() / 2; i++)
-    {
-        ImGui::PushID(i); // Use field index as identifier.
-        // Here we use a TreeNode to highlight on hover (we could use e.g. Selectable as well)
-        ImGui::AlignTextToFramePadding();
-        if(i == *(fe_State->core->GetSP()))
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.1f, 1.0f), "%02u:", i);
-        else
-            ImGui::Text("%02u:", i);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(40);
-        ImGui::InputScalar("##value", ImGuiDataType_U16, (fe_State->core->GetStack()+i), NULL, NULL, "%04X");
-        ImGui::PopID();
-    }
-    ImGui::NextColumn();
-    for (int i = fe_State->core->GetStackSize() / 2; i < fe_State->core->GetStackSize(); i++)
-    {
-        ImGui::PushID(i); // Use field index as identifier.
-        // Here we use a TreeNode to highlight on hover (we could use e.g. Selectable as well)
-        ImGui::AlignTextToFramePadding();
-        if (i == *(fe_State->core->GetSP()))
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.1f, 1.0f), "%02u:", i);
-        else
-            ImGui::Text("%02u:", i);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(40);
-        ImGui::InputScalar("##value", ImGuiDataType_U16, (fe_State->core->GetStack() + i), NULL, NULL, "%04X");
-        ImGui::PopID();
-    }
-    ImGui::End();
-}
-
-void DebugUI::ShowAudioWindow(bool* p_open)
-{
-    static float audio_h_zoom = 0, audio_v_zoom = 0;
-
-    ImGui::SetNextWindowSize(ImVec2(600, 300), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Audio", p_open))
-    {
-        ImGui::End();
-        return;
-    }
-    if (!audio_h_zoom)
-        audio_h_zoom = 1;
-    if (!audio_v_zoom)
-        audio_v_zoom = 1;
-    static ImGui::PlotConfig conf;
-    static float y_positions[4096] = { 0 };
-    for (int i = 0; i < 4096; i++) 
-        y_positions[i] = fe_State->audio_Output[(4096 - i + fe_State->audio_Output_Pos) % 4096];
-    //static float x_positions[4096];
-    //for (int i = 0; i < pos; i++)
-    //    x_positions[i] = (i + 4096 - pos);
-    //for (int i = pos; i < 4096; i++)
-    //    x_positions[i] = (i - pos);
-    //conf.values.xs = x_positions; // this line is optional
-    conf.values.ys = y_positions;
-    conf.values.offset = 0;
-    conf.values.count = (int)std::roundf(4096.0f / audio_h_zoom);
-    conf.scale.min = -1.0f / audio_v_zoom;
-    conf.scale.max = 1.0f / audio_v_zoom;
-    conf.scale.type = conf.scale.Linear;
-    conf.tooltip.show = true;
-    conf.tooltip.format = "x=%.2f, y=%.2f";
-    conf.grid_x.show = false;
-    conf.grid_y.show = false;
-    conf.frame_size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() - (3 * ImGui::GetTextLineHeightWithSpacing()));// ImVec2(600, 300);
-    conf.values.color = ImColor(255, 255, 0);
-    conf.line_thickness = 2.0f;
-
-    ImGui::TextDisabled("Zoom");
-    ImGui::SliderFloat("Horizontal", &audio_h_zoom, 1.0f, 256.0f, NULL, ImGuiSliderFlags_NoInput | ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_Logarithmic);
-    ImGui::SliderFloat("Vertical", &audio_v_zoom, 0.1f, 10.0f, NULL, ImGuiSliderFlags_NoInput | ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_Logarithmic);
-    ImGui::Plot("Channel 1", conf);
-
-    ImGui::End();
-}
-
-void DebugUI::ShowMenuBar()
+void BasicUI::ShowMenuBar()
 {
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("File"))
         {
             ShowMenuFile();
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Windows"))
-        {
-            ShowMenuWindows();
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Emulation"))
@@ -355,7 +85,7 @@ void DebugUI::ShowMenuBar()
     }
 }
 
-void DebugUI::ShowMenuFile()
+void BasicUI::ShowMenuFile()
 {
     ImGui::PushItemFlag(ImGuiItemFlags_Disabled, (bool)fe_State->open_File);
     if (ImGui::MenuItem("Load", ""))
@@ -378,7 +108,7 @@ void DebugUI::ShowMenuFile()
     }
 }
 
-void DebugUI::ShowMenuEmulation()
+void BasicUI::ShowMenuEmulation()
 {
     const ImU32 u32_one = 1;
     ImGui::TextUnformatted("CPU Cycles:");
@@ -397,7 +127,7 @@ void DebugUI::ShowMenuEmulation()
             fe_State->core->SetSystemMode(Chip8::SYSTEM_MODE::CHIP_8);
         }
         HelpMarker("Original COSMAC VIP CHIP-8 interpreter.");
-        
+
         if (ImGui::MenuItem("HP-48 (SUPER-CHIP)", NULL, fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::SUPER_CHIP ? true : false))
         {
             if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
@@ -424,30 +154,19 @@ void DebugUI::ShowMenuEmulation()
     }
     if (ImGui::BeginMenu("Quirks"))
     {
-        ImGui::MenuItem("VIP Jumps (NNN+V0)", NULL, &(fe_State->core->quirks.vip_jump) );
-        ImGui::MenuItem("Copy VY to VX Before Bit Shifts", NULL, &(fe_State->core->quirks.vip_shifts) );
-        ImGui::MenuItem("Register Store/Load Increments I", NULL, &(fe_State->core->quirks.vip_regs_read_write) );
-        ImGui::MenuItem("Logic Ops Reset VF", NULL, &(fe_State->core->quirks.logic_flag_reset) );
-        ImGui::MenuItem("Draw Ops Wrap", NULL, &(fe_State->core->quirks.draw_wrap) );
-        ImGui::MenuItem("Draw Ops Wait for Vblank", NULL, &(fe_State->core->quirks.draw_vblank) );
-        ImGui::MenuItem("S-CHIP 1.0 Large Fonts", NULL, &(fe_State->core->quirks.schip_10_fonts) );
+        ImGui::MenuItem("VIP Jumps (NNN+V0)", NULL, &(fe_State->core->quirks.vip_jump));
+        ImGui::MenuItem("Copy VY to VX Before Bit Shifts", NULL, &(fe_State->core->quirks.vip_shifts));
+        ImGui::MenuItem("Register Store/Load Increments I", NULL, &(fe_State->core->quirks.vip_regs_read_write));
+        ImGui::MenuItem("Logic Ops Reset VF", NULL, &(fe_State->core->quirks.logic_flag_reset));
+        ImGui::MenuItem("Draw Ops Wrap", NULL, &(fe_State->core->quirks.draw_wrap));
+        ImGui::MenuItem("Draw Ops Wait for Vblank", NULL, &(fe_State->core->quirks.draw_vblank));
+        ImGui::MenuItem("S-CHIP 1.0 Large Fonts", NULL, &(fe_State->core->quirks.schip_10_fonts));
         ImGui::EndMenu();
     }
 
 }
 
-void DebugUI::ShowMenuWindows()
-{
-    ImGui::MenuItem("Display", NULL, &show_display);
-    ImGui::MenuItem("CPU", NULL, &show_regs);
-    ImGui::MenuItem("Stack", NULL, &show_stack);
-    ImGui::MenuItem("RAM", NULL, &show_ram);
-    ImGui::MenuItem("VRAM", NULL, &show_vram);
-    ImGui::MenuItem("Log", NULL, &show_log);
-    ImGui::MenuItem("Audio Visualizer", NULL, &show_audio);
-}
-
-void DebugUI::ShowMenuOptions()
+void BasicUI::ShowMenuOptions()
 {
     if (ImGui::BeginMenu("Display"))
     {
@@ -470,10 +189,10 @@ void DebugUI::ShowMenuOptions()
             static bool drag_and_drop = true;
             static bool options_menu = true;
             static bool hdr = false;
-            static ImVec4 background_color   = ImVec4((float)fe_State->screen_Colors[0].r / 255.0f, (float)fe_State->screen_Colors[0].g / 255.0f, (float)fe_State->screen_Colors[0].b / 255.0f, 255.0f / 255.0f);
+            static ImVec4 background_color = ImVec4((float)fe_State->screen_Colors[0].r / 255.0f, (float)fe_State->screen_Colors[0].g / 255.0f, (float)fe_State->screen_Colors[0].b / 255.0f, 255.0f / 255.0f);
             static ImVec4 foreground_color_1 = ImVec4((float)fe_State->screen_Colors[1].r / 255.0f, (float)fe_State->screen_Colors[1].g / 255.0f, (float)fe_State->screen_Colors[1].b / 255.0f, 255.0f / 255.0f);
             static ImVec4 foreground_color_2 = ImVec4((float)fe_State->screen_Colors[2].r / 255.0f, (float)fe_State->screen_Colors[2].g / 255.0f, (float)fe_State->screen_Colors[2].b / 255.0f, 255.0f / 255.0f);
-            static ImVec4 overlap_color      = ImVec4((float)fe_State->screen_Colors[3].r / 255.0f, (float)fe_State->screen_Colors[3].g / 255.0f, (float)fe_State->screen_Colors[3].b / 255.0f, 255.0f / 255.0f);
+            static ImVec4 overlap_color = ImVec4((float)fe_State->screen_Colors[3].r / 255.0f, (float)fe_State->screen_Colors[3].g / 255.0f, (float)fe_State->screen_Colors[3].b / 255.0f, 255.0f / 255.0f);
             static ImVec4 backup_color;
             ImGuiColorEditFlags misc_flags = (hdr ? ImGuiColorEditFlags_HDR : 0) | (drag_and_drop ? 0 : ImGuiColorEditFlags_NoDragDrop) | (alpha_half_preview ? ImGuiColorEditFlags_AlphaPreviewHalf : (alpha_preview ? ImGuiColorEditFlags_AlphaPreview : 0)) | (options_menu ? 0 : ImGuiColorEditFlags_NoOptions);
             // Generate a default palette. The palette will persist and can be edited.
@@ -736,11 +455,11 @@ void DebugUI::ShowMenuOptions()
             for (int it = 0; it < 12; it++)
             {
                 xeno_chip_colors[it] = ImVec4((float)fe_State->screen_Colors[it + 4].r / 255.0f, (float)fe_State->screen_Colors[it + 4].g / 255.0f, (float)fe_State->screen_Colors[it + 4].b / 255.0f, 255.0f / 255.0f);
-                popup_id = "popup" + std::to_string(it+4);
-                popup_label = "Color " + std::to_string(it+4);
+                popup_id = "popup" + std::to_string(it + 4);
+                popup_label = "Color " + std::to_string(it + 4);
 
                 popups[it] = ImGui::ColorButton(popup_label.c_str(), xeno_chip_colors[it], misc_flags);
-                if((it % 4) != 3)
+                if ((it % 4) != 3)
                     ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
                 //open_popup_ol |= ImGui::Button("Overlap");
                 if (popups[it])
@@ -789,10 +508,10 @@ void DebugUI::ShowMenuOptions()
                     ImGui::EndGroup();
                     ImGui::EndPopup();
 
-                    fe_State->screen_Colors[it+4].r = (Uint8)(xeno_chip_colors[it].x * 255.0);
-                    fe_State->screen_Colors[it+4].g = (Uint8)(xeno_chip_colors[it].y * 255.0);
-                    fe_State->screen_Colors[it+4].b = (Uint8)(xeno_chip_colors[it].z * 255.0);
-                    fe_State->screen_Colors[it+4].a = (Uint8)(xeno_chip_colors[it].w * 255.0);
+                    fe_State->screen_Colors[it + 4].r = (Uint8)(xeno_chip_colors[it].x * 255.0);
+                    fe_State->screen_Colors[it + 4].g = (Uint8)(xeno_chip_colors[it].y * 255.0);
+                    fe_State->screen_Colors[it + 4].b = (Uint8)(xeno_chip_colors[it].z * 255.0);
+                    fe_State->screen_Colors[it + 4].a = (Uint8)(xeno_chip_colors[it].w * 255.0);
 
                     std::fill_n(fe_State->core->GetPrevVRAM(), 128 * 64, 0);
                     fe_State->core->SetScreenDirty();
@@ -829,5 +548,3 @@ void DebugUI::ShowMenuOptions()
 
 
 }
-
-

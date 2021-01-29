@@ -51,7 +51,13 @@
     <ClCompile Include="src\Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ImTerm_Commands.cpp">
+    <ClCompile Include="src\BasicUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_plot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ParentUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -71,7 +77,19 @@
     <ClInclude Include="inc\Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\ImTerm_Commands.h">
+    <ClInclude Include="imgui\imgui_memory_editor.h">
+      <Filter>Source Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\BasicUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui_plot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\UIState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ParentUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

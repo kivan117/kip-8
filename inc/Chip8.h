@@ -97,8 +97,7 @@ private:
 
 	bool screen_dirty = false;
 	bool wipe_screen = true;
-	bool start_beeper = false;
-		SYSTEM_MODE mode = CHIP_8;
+	SYSTEM_MODE mode = CHIP_8;
 
 	bool debug_stepping = false;
 	bool halted = false;
@@ -112,9 +111,9 @@ public:
 	Chip8();
 	~Chip8();
 	void Reset();
-	void Load(std::string filename);
+	void ResetMemory(bool randomize);
+	void Load(const std::vector<unsigned char> &buffer);
 	void Run(uint16_t cycles);
-	uint8_t GetPixel(uint16_t px);
 	uint8_t* GetVRAM();
 	uint8_t* GetPrevVRAM();
 	void SaveCurrentVRAM();
@@ -122,9 +121,6 @@ public:
 	uint8_t GetDelayTimer() { return delay_timer; }
 	void SetSoundTimer(uint8_t val) { sound_timer = val; return; }
 	void SetDelayTimer(uint8_t val) { delay_timer = val; return; }
-	bool GetBeeper() { return start_beeper; }
-	void SetBeeper() { start_beeper = true; return; }
-	void ResetBeeper() { start_beeper = false; return; }
 	bool GetScreenDirty() { return screen_dirty; }
 	void SetScreenDirty();
 	void ResetScreenDirty() { screen_dirty = false; return; }
@@ -149,10 +145,12 @@ public:
 	void SetSystemMode(SYSTEM_MODE newmode);
 	SYSTEM_MODE GetSystemMode();
 	uint8_t* GetRAM() { return &Memory[0]; }
+	uint16_t GetRAMLimit() { return RamLimit; }
 	uint8_t* GetRPLMem() { return &RPLMemory[0]; }
 	void SetRPLMem(uint8_t* input) { memcpy(RPLMemory, input, 8); }
 	bool RequestsRPLSave() { return write_rpl; }
 	void ResetRPLRequest() { write_rpl = false; }
+
 	struct Quirks {
 		bool vip_jump = false;                //always jump to NNN + V0
 		bool vip_shifts = false;             //copy VY into VX before shifting VX register
@@ -163,11 +161,13 @@ public:
 		bool schip_10_fonts = false;
 		bool schip_10_regs_read_write = false; //i is incremented 1 less than it should be, super-chip 1.0 only behavior
 	} quirks;
+
 	struct Resolution {
 		uint8_t base_width = 64;
 		uint8_t base_height = 32;
 		bool hires = false;
 	} res;
+
 	uint8_t audio_pattern[16] = { 0xF0 };
 };
 
