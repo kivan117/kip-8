@@ -29,4 +29,13 @@ typedef struct uistate {
 	std::vector<unsigned char> file_data;
 	std::shared_ptr<pfd::open_file> open_File;
 	std::string last_File{ "" };
+
+	enum KeyLayout { VIP, DREAM, DIGITRAN };
+	KeyLayout selected_Key_Layout{ VIP };
+	bool key_Layout_Changed{ false };
+
+	std::string keyNames[16] = { "" };
+	bool wait_for_remap_input{ false };
+	int8_t remap_key_index{ -1 };
+
 } UIState;

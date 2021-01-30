@@ -60,6 +60,12 @@
     <ClCompile Include="src\ParentUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ImGui_Log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imguial_term.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Chip8.h">
@@ -91,6 +97,15 @@
     </ClInclude>
     <ClInclude Include="inc\ParentUI.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\ImGui_Log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imguial_term.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imguial_button.h">
+      <Filter>Source Files\imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

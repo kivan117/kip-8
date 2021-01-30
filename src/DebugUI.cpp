@@ -1,4 +1,6 @@
 #include "DebugUI.h"
+#include "imguial_button.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 void DebugUI::Init()
 {
@@ -10,10 +12,10 @@ void DebugUI::Init()
 	ImGuiSDL::Initialize(fe_State->renderer, win_w, win_h);
     chip8_ram_editor.Cols = 32;
     chip8_vram_editor.Cols = 64;
-    //terminal_log = new ImTerm::terminal<ImTerm_Commands>(cmd_struct);
-    //terminal_log->set_min_log_level(ImTerm::message::severity::trace);
-    //Logger::GetClientLogger()->sinks().push_back(terminal_log->get_terminal_helper());
-    //Logger::GetClientLogger()->set_level(spdlog::level::info);
+    auto imgui_logger = std::make_shared<imgui_log_sink_mt>(log);
+    log->setFilterHeaderLabel("Filter");
+    Logger::GetClientLogger()->sinks().push_back(imgui_logger);
+    Logger::GetClientLogger()->set_level(spdlog::level::info);
 
 	return;
 }
@@ -67,8 +69,12 @@ void DebugUI::Draw()
     if (show_stack)
         ShowStackWindow(&show_stack);
 
-    //if(show_log)
+    if (show_log)
+        ShowLogWindow(&show_log);
     //    show_log = terminal_log->show();
+
+    if(show_key_remap)
+        ShowKeyRemapWindow(&show_key_remap);
 
 	SDL_Rect windowRect = { 0, 0, 1, 1 };
 	SDL_RenderSetClipRect(fe_State->renderer, &windowRect); //fixes an SDL bug for D3D backend
@@ -88,7 +94,6 @@ bool DebugUI::WantCaptureKB()
 {
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	fe_State->capture_KB = io.WantCaptureKeyboard;
-	return fe_State->capture_KB;
 	return fe_State->capture_KB;
 }
 
@@ -172,12 +177,12 @@ void DebugUI::ShowCPUEditor(bool* p_open)
         fe_State->core->Reset();
     }
     ImGui::SameLine();
-    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !fe_State->core->GetDebugStepping());
-    if (ImGui::Button("Run"))
+    //ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !fe_State->core->GetDebugStepping());
+    if (ImGuiAl::Button("Run", fe_State->core->GetDebugStepping()))
     {
         fe_State->core->ToggleDebugStepping();
     }
-    ImGui::PopItemFlag();
+    //ImGui::PopItemFlag();
     ImGui::End();
 }
 
@@ -199,6 +204,18 @@ void DebugUI::ShowDisplayWindow(bool* p_open)
     ImGui::Image(fe_State->screen_Texture, ImGui::GetContentRegionAvail());
     ImGui::End();
 
+}
+
+void DebugUI::ShowLogWindow(bool* p_open)
+{
+    ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+    if(!ImGui::Begin("Log", p_open))
+    {
+        ImGui::End();
+        return;
+    }
+    log->draw();
+    ImGui::End();
 }
 
 void DebugUI::ShowRAMWindow(bool* p_open)
@@ -324,6 +341,34 @@ void DebugUI::ShowAudioWindow(bool* p_open)
     ImGui::SliderFloat("Vertical", &audio_v_zoom, 0.1f, 10.0f, NULL, ImGuiSliderFlags_NoInput | ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_Logarithmic);
     ImGui::Plot("Channel 1", conf);
 
+    ImGui::End();
+}
+
+void DebugUI::ShowKeyRemapWindow(bool* p_open)
+{
+    static ImVec2 button_size(80, 80);
+
+    ImGui::SetNextWindowSize(ImVec2(440, 400), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Remap Keys:", p_open))
+    {
+        ImGui::End();
+        return;
+    }
+    
+    for (int i = 0; i < 16; i++)
+    {
+        ImGui::PushID(i);
+        if (ImGuiAl::Button(fe_State->keyNames[i].c_str(), !fe_State->wait_for_remap_input, button_size))
+        {
+            fe_State->wait_for_remap_input = true;
+            fe_State->remap_key_index = i;
+        }
+        ImGui::PopID();
+        if (i % 4 != 3)
+            ImGui::SameLine();
+    }
+
+    
     ImGui::End();
 }
 
@@ -827,6 +872,57 @@ void DebugUI::ShowMenuOptions()
         ImGui::EndMenu();
     }
 
+    if (ImGui::BeginMenu("Input"))
+    {
+        if (ImGui::BeginMenu("Keypad Style"))
+        {
+            bool vip_selected = (fe_State->selected_Key_Layout == UIState::KeyLayout::VIP ? true : false);
+            bool dream_selected = (fe_State->selected_Key_Layout == UIState::KeyLayout::DREAM ? true : false);
+            bool digi_selected = (fe_State->selected_Key_Layout == UIState::KeyLayout::DIGITRAN ? true : false);
+
+            if (ImGui::MenuItem("VIP", NULL, &vip_selected))
+            {
+                if (fe_State->selected_Key_Layout != UIState::KeyLayout::VIP)
+                {
+                    fe_State->selected_Key_Layout = UIState::KeyLayout::VIP;
+                    fe_State->key_Layout_Changed = true;
+                }
+            }
+            HelpMarker("1 2 3 C\n4 5 6 D\n7 8 9 E\nA 0 B F");
+
+            if (ImGui::MenuItem("DREAM 6800", NULL, &dream_selected))
+            {
+                if (fe_State->selected_Key_Layout != UIState::KeyLayout::DREAM)
+                {
+                    fe_State->selected_Key_Layout = UIState::KeyLayout::DREAM;
+                    fe_State->key_Layout_Changed = true;
+                }
+            }
+            HelpMarker("C D E F\n8 9 A B\n4 5 6 7\n0 1 2 3");
+
+            if (ImGui::MenuItem("Digitran", NULL, &digi_selected))
+            {
+                if (fe_State->selected_Key_Layout != UIState::KeyLayout::DIGITRAN)
+                {
+                    fe_State->selected_Key_Layout = UIState::KeyLayout::DIGITRAN;
+                    fe_State->key_Layout_Changed = true;
+                }
+            }
+            HelpMarker("0 1 2 3\n4 5 6 7\n8 9 A B\nC D E F");
+
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::MenuItem("Map Keys"))
+        {
+            show_key_remap = true;
+        }
+
+        ImGui::EndMenu();
+
+
+
+    }
 
 }
 

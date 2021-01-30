@@ -1,5 +1,5 @@
 #pragma once
-#include <unordered_map>
+#include <map>
 #include <vector>
 #pragma warning(push, 0)
 #include <SDL.h>
@@ -45,7 +45,12 @@ private:
 	stopwatch::Stopwatch m_Timer;
 	const double m_FrameMicroSeconds = 1000000.0 / 60.0; //microseconds per frame length
 	double time_accumulator = 0.0;
-	std::unordered_map<SDL_Scancode, uint8_t> keymap;
+	
+	//breaking out input into 2 maps lets us change the user's input keys or the emulated key layout without affecting both
+	std::map<uint8_t, uint8_t> keymap_internal; //maps from internal key matrix to current key layout
+	std::map<SDL_Scancode, uint8_t> keymap; //maps scancodes for player's kayboard to current key layout
+
+	//the important shared data between this SDL front end and the ImGui menus/windows
 	UIState m_State;
 
 private:
@@ -62,5 +67,8 @@ private:
 	void ResetDisplayTexture();
 	void PersistRPL();
 	void SetTitle();
+	void SetInternalKeys(UIState::KeyLayout layout);
+	void SetMappedKey(SDL_Scancode scancode, uint8_t index);
+
 };
 

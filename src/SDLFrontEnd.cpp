@@ -35,23 +35,65 @@ void SDLFrontEnd::init()
     m_State.run_Cycles = 9;
     m_State.window = NULL;
 	m_State.volume = 5.0; // 0 - 10
-	//setup default keymap. should make this configurable soon
-	keymap.insert_or_assign(SDL_SCANCODE_X, 0x0);
-	keymap.insert_or_assign(SDL_SCANCODE_1, 0x1);
-	keymap.insert_or_assign(SDL_SCANCODE_2, 0x2);
-	keymap.insert_or_assign(SDL_SCANCODE_3, 0x3);
-	keymap.insert_or_assign(SDL_SCANCODE_Q, 0x4);
-	keymap.insert_or_assign(SDL_SCANCODE_W, 0x5);
-	keymap.insert_or_assign(SDL_SCANCODE_E, 0x6);
-	keymap.insert_or_assign(SDL_SCANCODE_A, 0x7);
-	keymap.insert_or_assign(SDL_SCANCODE_S, 0x8);
-	keymap.insert_or_assign(SDL_SCANCODE_D, 0x9);
-	keymap.insert_or_assign(SDL_SCANCODE_Z, 0xA);
-	keymap.insert_or_assign(SDL_SCANCODE_C, 0xB);
-	keymap.insert_or_assign(SDL_SCANCODE_4, 0xC);
-	keymap.insert_or_assign(SDL_SCANCODE_R, 0xD);
-	keymap.insert_or_assign(SDL_SCANCODE_F, 0xE);
-	keymap.insert_or_assign(SDL_SCANCODE_V, 0xF);
+
+
+//  internal keymap matrix layout
+//	=================
+//  | 0 | 1 | 2 | 3 |
+//	=================
+//  | 4 | 5 | 6 | 7 |
+//	=================
+//  | 8 | 9 | A | B |
+//	=================
+//  | C | D | E | F |
+//	=================
+
+
+//  default keymap layout (COSMAC VIP Layout)
+//	=================
+//  | 1 | 2 | 3 | C |
+//	=================
+//  | 4 | 5 | 6 | D |
+//	=================
+//  | 7 | 8 | 9 | E |
+//	=================
+//  | A | 0 | B | F |
+//	=================
+
+
+//  default scancodes layout (COSMAC VIP Layout)
+//	=================
+//  | 1 | 2 | 3 | 4 |
+//	=================
+//  | Q | W | E | R |
+//	=================
+//  | A | S | D | F |
+//	=================
+//  | Z | X | C | V |
+//	=================
+
+	//internal matrix position to emulator key per the chosen key layout
+	SetInternalKeys(m_State.selected_Key_Layout);
+
+	//external scancodes to internal matrix position
+	SetMappedKey(SDL_SCANCODE_1, 0x0);
+	SetMappedKey(SDL_SCANCODE_2, 0x1);
+	SetMappedKey(SDL_SCANCODE_3, 0x2);
+	SetMappedKey(SDL_SCANCODE_4, 0x3);
+	SetMappedKey(SDL_SCANCODE_Q, 0x4);
+	SetMappedKey(SDL_SCANCODE_W, 0x5);
+	SetMappedKey(SDL_SCANCODE_E, 0x6);
+	SetMappedKey(SDL_SCANCODE_R, 0x7);
+	SetMappedKey(SDL_SCANCODE_A, 0x8);
+	SetMappedKey(SDL_SCANCODE_S, 0x9);
+	SetMappedKey(SDL_SCANCODE_D, 0xA);
+	SetMappedKey(SDL_SCANCODE_F, 0xB);
+	SetMappedKey(SDL_SCANCODE_Z, 0xC);
+	SetMappedKey(SDL_SCANCODE_X, 0xD);
+	SetMappedKey(SDL_SCANCODE_C, 0xE);
+	SetMappedKey(SDL_SCANCODE_V, 0xF);
+
+
 
     initVideo();
     initAudio();
@@ -399,7 +441,6 @@ void SDLFrontEnd::SetTitle()
 
 void SDLFrontEnd::Load(std::string filename)
 {
-	
 
 	LOG_INFO("Loading new file: {}", filename);
 	std::ifstream ifd(filename, std::ios::binary | std::ios::ate);
@@ -448,6 +489,12 @@ void SDLFrontEnd::Load(std::string filename)
 
 void SDLFrontEnd::HandleInput()
 {
+	if (m_State.key_Layout_Changed)
+	{
+		SetInternalKeys(m_State.selected_Key_Layout);
+		m_State.key_Layout_Changed = false;
+	}
+
 	SDL_Event event;	
 
 	while (SDL_PollEvent(&event))
@@ -467,11 +514,20 @@ void SDLFrontEnd::HandleInput()
 				//ignore key input if the emulator is paused OR if the debug ui is captureing keyboard input
 				if (m_Paused || (imgui_UI && imgui_UI->WantCaptureKB()))
 					break;
+
+				//if key remap is requested, assign keypress to remap
+				if (m_State.wait_for_remap_input)
+				{
+					m_State.wait_for_remap_input = false;
+					SetMappedKey(event.key.keysym.scancode, m_State.remap_key_index);
+
+					break;
+				}
 			
 				//if the key pressed is in the emulator keymap, set the key state in the emulator
 				if (keymap.find(event.key.keysym.scancode) != keymap.end())
 				{
-					m_State.core->SetKey(keymap.at(event.key.keysym.scancode), 0);
+					m_State.core->SetKey(keymap_internal.at(keymap.at(event.key.keysym.scancode)), 0);
 					break;
 				}
 
@@ -530,10 +586,14 @@ void SDLFrontEnd::HandleInput()
 				if (m_Paused)
 					break;
 
+				//if key remap is requested, ignore the keypress (assign on key up)
+				if (m_State.wait_for_remap_input)
+					break;
+
 				//if the key is part of the keymap, toggle game key input state
 				if (keymap.find(event.key.keysym.scancode) != keymap.end())
 				{
-					m_State.core->SetKey(keymap.at(event.key.keysym.scancode), 1);
+					m_State.core->SetKey(keymap_internal.at(keymap.at(event.key.keysym.scancode)), 1);
 					break;
 				}
 
@@ -543,4 +603,99 @@ void SDLFrontEnd::HandleInput()
 				break;
 			}
 	}
+}
+
+void SDLFrontEnd::SetInternalKeys(UIState::KeyLayout layout)
+{
+	switch (layout)
+	{
+	case(UIState::KeyLayout::VIP):
+	{
+		keymap_internal.insert_or_assign(0x0, 0x1);
+		keymap_internal.insert_or_assign(0x1, 0x2);
+		keymap_internal.insert_or_assign(0x2, 0x3);
+		keymap_internal.insert_or_assign(0x3, 0xC);
+		keymap_internal.insert_or_assign(0x4, 0x4);
+		keymap_internal.insert_or_assign(0x5, 0x5);
+		keymap_internal.insert_or_assign(0x6, 0x6);
+		keymap_internal.insert_or_assign(0x7, 0xD);
+		keymap_internal.insert_or_assign(0x8, 0x7);
+		keymap_internal.insert_or_assign(0x9, 0x8);
+		keymap_internal.insert_or_assign(0xA, 0x9);
+		keymap_internal.insert_or_assign(0xB, 0xE);
+		keymap_internal.insert_or_assign(0xC, 0xA);
+		keymap_internal.insert_or_assign(0xD, 0x0);
+		keymap_internal.insert_or_assign(0xE, 0xB);
+		keymap_internal.insert_or_assign(0xF, 0xF);
+		break;
+	}
+	case(UIState::KeyLayout::DREAM):
+	{
+		keymap_internal.insert_or_assign(0x0, 0xC);
+		keymap_internal.insert_or_assign(0x1, 0xD);
+		keymap_internal.insert_or_assign(0x2, 0xE);
+		keymap_internal.insert_or_assign(0x3, 0xF);
+		keymap_internal.insert_or_assign(0x4, 0x8);
+		keymap_internal.insert_or_assign(0x5, 0x9);
+		keymap_internal.insert_or_assign(0x6, 0xA);
+		keymap_internal.insert_or_assign(0x7, 0xB);
+		keymap_internal.insert_or_assign(0x8, 0x4);
+		keymap_internal.insert_or_assign(0x9, 0x5);
+		keymap_internal.insert_or_assign(0xA, 0x6);
+		keymap_internal.insert_or_assign(0xB, 0x7);
+		keymap_internal.insert_or_assign(0xC, 0x0);
+		keymap_internal.insert_or_assign(0xD, 0x1);
+		keymap_internal.insert_or_assign(0xE, 0x2);
+		keymap_internal.insert_or_assign(0xF, 0x3);
+		break;
+	}
+	case(UIState::KeyLayout::DIGITRAN):
+	{
+		keymap_internal.insert_or_assign(0x0, 0x0);
+		keymap_internal.insert_or_assign(0x1, 0x1);
+		keymap_internal.insert_or_assign(0x2, 0x2);
+		keymap_internal.insert_or_assign(0x3, 0x3);
+		keymap_internal.insert_or_assign(0x4, 0x4);
+		keymap_internal.insert_or_assign(0x5, 0x5);
+		keymap_internal.insert_or_assign(0x6, 0x6);
+		keymap_internal.insert_or_assign(0x7, 0x7);
+		keymap_internal.insert_or_assign(0x8, 0x8);
+		keymap_internal.insert_or_assign(0x9, 0x9);
+		keymap_internal.insert_or_assign(0xA, 0xA);
+		keymap_internal.insert_or_assign(0xB, 0xB);
+		keymap_internal.insert_or_assign(0xC, 0xC);
+		keymap_internal.insert_or_assign(0xD, 0xD);
+		keymap_internal.insert_or_assign(0xE, 0xE);
+		keymap_internal.insert_or_assign(0xF, 0xF);
+		break;
+	}
+	default:
+		LOG_WARN("Invalid key layout selected.");
+		break;
+	}
+}
+
+void SDLFrontEnd::SetMappedKey(SDL_Scancode scancode, uint8_t index)
+{
+
+	auto it = keymap.find(scancode);
+	while (it != keymap.end())
+	{
+		m_State.keyNames[it->second] = "";
+		keymap.erase(it);
+		it = keymap.find(scancode);
+	}
+	it = keymap.begin();
+	while (it != keymap.end())
+	{
+		if (it->second == index)
+			keymap.erase(it);
+		it++;
+	}
+
+	keymap.insert_or_assign(scancode, index);
+	m_State.keyNames[index] = std::string(SDL_GetScancodeName(scancode));
+	m_State.wait_for_remap_input = false;
+	m_State.remap_key_index = -1;
+	return;
 }

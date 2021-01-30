@@ -150,7 +150,7 @@
       <ConformanceMode>false</ConformanceMode>
       <DisableSpecificWarnings>26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <LanguageStandard_C>Default</LanguageStandard_C>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -162,6 +162,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imguial_term.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_impl_sdl.cpp" />
@@ -171,17 +172,21 @@
     <ClCompile Include="src\BasicUI.cpp" />
     <ClCompile Include="src\Chip8.cpp" />
     <ClCompile Include="src\DebugUI.cpp" />
+    <ClCompile Include="src\ImGui_Log.cpp" />
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\ParentUI.cpp" />
     <ClCompile Include="src\SDLFrontEnd.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="imgui\imguial_button.h" />
+    <ClInclude Include="imgui\imguial_term.h" />
     <ClInclude Include="imgui\imgui_memory_editor.h" />
     <ClInclude Include="imgui\imgui_plot.h" />
     <ClInclude Include="inc\BasicUI.h" />
     <ClInclude Include="inc\Chip8.h" />
     <ClInclude Include="inc\DebugUI.h" />
+    <ClInclude Include="inc\ImGui_Log.h" />
     <ClInclude Include="inc\Logger.h" />
     <ClInclude Include="inc\ParentUI.h" />
     <ClInclude Include="inc\Registers.h" />
