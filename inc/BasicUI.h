@@ -1,10 +1,10 @@
 #pragma once
 #include "ParentUI.h"
 #pragma warning(push, 0)
-#include <SDL.h>
-#include "imgui.h"
-#include "imgui_internal.h"
-#include "imgui_impl_sdl.h"
+#include <SDL2/SDL.h>
+#include <imgui.h>
+#include <imgui_internal.h>
+#include <imgui_impl_sdl.h>
 #include "imgui_sdl.h"
 #include "portable-file-dialogs.h"
 #pragma warning(pop)
@@ -21,8 +21,6 @@ private:
 	void ShowMenuEmulation();
 	void ShowMenuOptions();
 
-
-
 public:
 	BasicUI(UIState* shared_state) : fe_State(shared_state) {}
 	~BasicUI() {}
@@ -32,5 +30,4 @@ public:
 	void HandleInput(SDL_Event* event) override;
 	bool WantCaptureKB() override;
 	bool WantCaptureMouse() override;
-
 };

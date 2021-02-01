@@ -1,12 +1,12 @@
 #include "DebugUI.h"
 #include "imguial_button.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
 
 void DebugUI::Init()
 {
     ImGui::CreateContext();
 	ImGui::StyleColorsDark();
-	ImGui_ImplSDL2_InitForSDL(fe_State->window);
+    ImGui_ImplSDL2_InitForD3D(fe_State->window); //this is a badly named function. it's not specific to D3D really
+	//ImGui_ImplSDL2_InitForSDL(fe_State->window);
     int win_w, win_h;
     SDL_GetWindowSize(fe_State->window, &win_w, &win_h);
 	ImGuiSDL::Initialize(fe_State->renderer, win_w, win_h);
@@ -16,6 +16,11 @@ void DebugUI::Init()
     log->setFilterHeaderLabel("Filter");
     Logger::GetClientLogger()->sinks().push_back(imgui_logger);
     Logger::GetClientLogger()->set_level(spdlog::level::info);
+
+    SDL_RendererInfo r_info;
+    SDL_GetRendererInfo(fe_State->renderer, &r_info);
+
+    LOG_INFO("Renderer: {}", r_info.name);
 
 	return;
 }
@@ -500,6 +505,10 @@ void DebugUI::ShowMenuOptions()
         {
             fe_State->grid_Toggled = true;
         }
+        if (ImGui::MenuItem("Optimize Draw", "", &(fe_State->optimize_Draw), true))
+        {
+        }
+        HelpMarker("Minimize redraw. May cause minor issues in some games.");
 
         const ImU32 u32_one = 1;
         ImGui::TextUnformatted("Zoom:");

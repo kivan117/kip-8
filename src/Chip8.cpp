@@ -104,8 +104,6 @@ void Chip8::Load(const std::vector<unsigned char> &buffer)
 	{
 		Memory[0x200 + it] = (uint8_t)buffer[it];
 	}
-	//TODO: make this load from memory given only a buffer
-	//The randomize memory function should not occur here honestly, this should just load
 }
 
 uint8_t* Chip8::GetVRAM()
@@ -310,9 +308,7 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 		{
 			case(0x0E0): // 0x00E0, clear screen
 			{
-				LOG_TRACE("[{:04X}] {:04X}\t00E0\tCHIP-8 \tClear screen", pc - 2, opcode);
-				//std::fill_n(FrameBuffer, 128 * 64, 0); //old method that only works for one plane. just fills whole framebuffers with 0
-				//std::fill_n(PreviousFramebuffer, 128 * 64, 0);
+				LOG_TRACE("[{:04X}] {:04X}\t00E0\tCHIP-8 \tClear screen", pc - 2, opcode);	
 				
 				for (int it = 0; it < res.base_height * res.base_width; it++)
 				{
@@ -352,10 +348,14 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 					SetScreenDirty();
 					for (uint8_t y = 0; y < res.base_height; y++)
 					{
-						for (int8_t x = res.base_width - 1; x >= 4; x--)
+						for (uint8_t x = res.base_width - 1; x >= 4; x--)
 						{
 							FrameBuffer[y * (res.base_width) + x] &= ~active_plane; //erase the bits corresponding to the in use draw plane, which will be shifted
 							FrameBuffer[y * (res.base_width) + x] |= ((FrameBuffer[y * (res.base_width) + x - 4]) & active_plane); // shift the affected bits by ORing them from source to destination
+						}
+						for (int8_t x = 3; x >= 0; x--)
+						{
+							FrameBuffer[y * (res.base_width) + x] &= ~active_plane; //erase the bits corresponding to the in use draw plane, which will be shifted
 						}
 					}
 
@@ -372,10 +372,14 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 					SetScreenDirty();
 					for (uint8_t y = 0; y < res.base_height; y++)
 					{
-						for (int8_t x = 0; x < res.base_width - 4; x++)
+						for (uint8_t x = 0; x < res.base_width - 4; x++)
 						{
 							FrameBuffer[y * (res.base_width) + x] &= ~active_plane; //erase the bits corresponding to the in use draw plane, which will be shifted
 							FrameBuffer[y * (res.base_width) + x] |= ((FrameBuffer[y * (res.base_width) + x + 4]) & active_plane); // shift the affected bits by ORing them from source to destination
+						}
+						for (uint8_t x = res.base_width - 4; x < res.base_width; x++)
+						{
+							FrameBuffer[y * (res.base_width) + x] &= ~active_plane; //erase the bits corresponding to the in use draw plane, which will be shifted
 						}
 					}
 				}
@@ -1047,6 +1051,14 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 			SetSoundTimer(regs.v[op_nibs[1]]);
 			break;
 		case(0x1E): //FX1E, Add the value stored in register VX to register I
+			//Quirk probably: I + VX overflow (SCHIP)
+			if (mode == SYSTEM_MODE::SUPER_CHIP)
+			{
+				if (regs.i + regs.v[op_nibs[1]] > 0xFFF)
+					regs.v[0xF] = 1;
+				else
+					regs.v[0xF] = 0;
+			}
 			regs.i += regs.v[op_nibs[1]];
 			LOG_TRACE("[{:04X}] {:04X}\tFX1E\tCHIP-8 \tSet I = I + VX", pc - 2, opcode);
 			break;

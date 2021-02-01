@@ -1,8 +1,10 @@
 #pragma once
 #include <iostream>
+#pragma warning(push, 0)
 #include "imguial_term.h"
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/base_sink.h"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/base_sink.h>
+#pragma warning(pop)
 
 template<typename Mutex>
 class ImGui_Log : public spdlog::sinks::base_sink <Mutex>

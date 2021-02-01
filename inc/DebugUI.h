@@ -1,15 +1,13 @@
 #pragma once
 #include "ParentUI.h"
 #pragma warning(push, 0)
-#include <SDL.h>
-#include "imgui.h"
-#include "imgui_internal.h"
-#include "imgui_impl_sdl.h"
+#include <SDL2/SDL.h>
+#include <imgui.h>
+#include <imgui_internal.h>
+#include <imgui_impl_sdl.h>
 #include "imgui_sdl.h"
 #include "imgui_memory_editor.h"
 #include "imgui_plot.h"
-//#include "imterm\terminal.hpp"
-//#include "ImTerm_Commands.h"
 #include "imguial_term.h"
 #include "portable-file-dialogs.h"
 #pragma warning(pop)

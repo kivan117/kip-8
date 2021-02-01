@@ -3,6 +3,10 @@
 #include <iostream>
 #include <fstream>
 
+#ifndef PI
+#define PI 3.1415926535897932
+#endif
+
 SDLFrontEnd::SDLFrontEnd(Chip8* core)
 {
 	m_State.core = core;
@@ -36,46 +40,10 @@ void SDLFrontEnd::init()
     m_State.window = NULL;
 	m_State.volume = 5.0; // 0 - 10
 
-
-//  internal keymap matrix layout
-//	=================
-//  | 0 | 1 | 2 | 3 |
-//	=================
-//  | 4 | 5 | 6 | 7 |
-//	=================
-//  | 8 | 9 | A | B |
-//	=================
-//  | C | D | E | F |
-//	=================
-
-
-//  default keymap layout (COSMAC VIP Layout)
-//	=================
-//  | 1 | 2 | 3 | C |
-//	=================
-//  | 4 | 5 | 6 | D |
-//	=================
-//  | 7 | 8 | 9 | E |
-//	=================
-//  | A | 0 | B | F |
-//	=================
-
-
-//  default scancodes layout (COSMAC VIP Layout)
-//	=================
-//  | 1 | 2 | 3 | 4 |
-//	=================
-//  | Q | W | E | R |
-//	=================
-//  | A | S | D | F |
-//	=================
-//  | Z | X | C | V |
-//	=================
-
-	//internal matrix position to emulator key per the chosen key layout
+	//setup default VIP style keypad
 	SetInternalKeys(m_State.selected_Key_Layout);
 
-	//external scancodes to internal matrix position
+	//setup default keyboard mapping
 	SetMappedKey(SDL_SCANCODE_1, 0x0);
 	SetMappedKey(SDL_SCANCODE_2, 0x1);
 	SetMappedKey(SDL_SCANCODE_3, 0x2);
@@ -93,7 +61,31 @@ void SDLFrontEnd::init()
 	SetMappedKey(SDL_SCANCODE_C, 0xE);
 	SetMappedKey(SDL_SCANCODE_V, 0xF);
 
+	//check for game database
+	std::ifstream hashes_infile("hashmap.json");
+	if (hashes_infile.good())
+	{
+		hashes_infile >> m_State.games_hashes;
+		LOG_INFO("Loaded file hashes from hashmap.json");
+	}
+	else
+	{
+		LOG_INFO("Unable to load file hashes from hashmap.json");
+	}
+	hashes_infile.close();
 
+	//check for game database
+	std::ifstream settings_infile("game_settings.json");
+	if (settings_infile.good())
+	{
+		settings_infile >> m_State.game_settings;
+		LOG_INFO("Loaded per-game settings from game_settings.json");
+	}
+	else
+	{
+		LOG_INFO("Unable to load per-game settings from game_settings.json");
+	}
+	settings_infile.close();
 
     initVideo();
     initAudio();
@@ -120,24 +112,24 @@ int SDLFrontEnd::initVideo()
     }
     else
     {
-		m_State.screen_Colors[0].r = 0x88;//default background color
-		m_State.screen_Colors[0].g = 0x55;
-		m_State.screen_Colors[0].b = 0x00;
+		m_State.screen_Colors[0].r = 0x00;//default background color
+		m_State.screen_Colors[0].g = 0x1B;
+		m_State.screen_Colors[0].b = 0x1B;
 		m_State.screen_Colors[0].a = 0xFF;
 
-		m_State.screen_Colors[1].r = 0xEE;//default foreground color
-		m_State.screen_Colors[1].g = 0xBB;
-		m_State.screen_Colors[1].b = 0x00;
+		m_State.screen_Colors[1].r = 0x00;//default foreground color
+		m_State.screen_Colors[1].g = 0x80;
+		m_State.screen_Colors[1].b = 0x80;
 		m_State.screen_Colors[1].a = 0xFF;
 
-		m_State.screen_Colors[2].r = 0xEE;//default plane 2 color
-		m_State.screen_Colors[2].g = 0x55;
-		m_State.screen_Colors[2].b = 0x00;
+		m_State.screen_Colors[2].r = 0x4C;//default plane 2 color
+		m_State.screen_Colors[2].g = 0xA6;
+		m_State.screen_Colors[2].b = 0xA6;
 		m_State.screen_Colors[2].a = 0xFF;
 
-		m_State.screen_Colors[3].r = 0x55;//default plane1 + plane 2 overlap color
-		m_State.screen_Colors[3].g = 0x11;
-		m_State.screen_Colors[3].b = 0x00;
+		m_State.screen_Colors[3].r = 0x99;//default plane1 + plane 2 overlap color
+		m_State.screen_Colors[3].g = 0xCC;
+		m_State.screen_Colors[3].b = 0xCC;
 		m_State.screen_Colors[3].a = 0xFF;
 
 		//make a hardware accel renderer for future screen drawing
@@ -171,7 +163,7 @@ void audio_callback(void* user, Uint8* stream, int len) {
 			}
 			else //Not XO-Chip mode, just play a 512hz sine wave tone
 			{
-				double temp = (SDL_sin(((double)(frontend->m_Sample_Pos++) / frontend->SAMPLES_PER_SINE) * (double)M_PI * 2.0) * (3276.7 * (double)frontend->GetState()->volume));
+				double temp = (SDL_sin(((double)(frontend->m_Sample_Pos++) / frontend->SAMPLES_PER_SINE) * (double)PI * 2.0) * (3276.7 * (double)frontend->GetState()->volume));
 				audio_stream[it] = (int16_t) std::round(temp);
 				
 			}
@@ -333,7 +325,7 @@ void SDLFrontEnd::DrawScreen()
 		uint8_t* PreviousFramebuffer = m_State.core->GetPrevVRAM();
 		for (int i = 0; i < m_State.core->res.base_width * m_State.core->res.base_height; i++)
 		{
-			if ((CurrentFB[i]) ^ PreviousFramebuffer[i])
+			if (!m_State.optimize_Draw || (CurrentFB[i] ^ PreviousFramebuffer[i]))
 			{
 				int x = i % m_Res_Width;
 				int y = i / m_Res_Width;
@@ -410,7 +402,7 @@ void SDLFrontEnd::PersistRPL()
 	file = m_State.last_File;
 	if (file != "")
 	{
-		file += ".rpl";
+		file += ".sav";
 		std::ofstream ofd(file, std::ios::binary | std::ios::out);
 		if (!ofd.good())
 		{
@@ -422,15 +414,140 @@ void SDLFrontEnd::PersistRPL()
 	}
 }
 
+//truly hideous function to automatically setup a game according to JSON game settings database
+void SDLFrontEnd::LoadPrefs(std::string key)
+{
+	//no entry found for the given key, abort
+	if (m_State.game_settings[key].isNull())
+	{
+		LOG_INFO("No saved preferences found. {}", m_State.last_File);
+		return;
+	}
+
+	//setup pretty title
+	m_State.game_title = m_State.game_settings[key].get("title", m_State.games_hashes[key].get("file", "")).asString();
+	
+	//set run speed
+	m_State.run_Cycles = std::stoi(m_State.game_settings[key]["options"].get("tickrate", "9").asString());
+	
+	//set system mode
+	std::string sys_mode = m_State.game_settings[key].get("platform", "chip8").asString();
+	if (sys_mode == "chip8")
+	{
+		if (m_State.core->GetSystemMode() != Chip8::SYSTEM_MODE::CHIP_8)
+		{
+			m_State.resolution_Zoom = m_State.resolution_Zoom * 2;
+			m_State.zoom_Changed = true;
+		}
+		m_State.core->SetSystemMode(Chip8::SYSTEM_MODE::CHIP_8);
+	}
+	else if (sys_mode == "schip")
+	{
+		if (m_State.core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+		{
+			m_State.resolution_Zoom = m_State.resolution_Zoom / 2;
+			m_State.zoom_Changed = true;
+		}
+		m_State.core->SetSystemMode(Chip8::SYSTEM_MODE::SUPER_CHIP);
+	}
+	else																// if (sys_mode == "xochip")
+	{
+		if (m_State.core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+		{
+			m_State.resolution_Zoom = m_State.resolution_Zoom / 2;
+			m_State.zoom_Changed = true;
+		}
+		m_State.core->SetSystemMode(Chip8::SYSTEM_MODE::XO_CHIP);
+	}
+
+	//set colors
+	uint8_t red, green, blue;
+	
+	std::string color_string = m_State.game_settings[key]["options"].get("backgroundColor", "#001B1B").asString();
+	red = (stoi(color_string.substr(1), nullptr, 16) & 0xFF0000) >> 16;
+	green = (stoi(color_string.substr(1), nullptr, 16) & 0x00FF00) >> 8;
+	blue = (stoi(color_string.substr(1), nullptr, 16) & 0x0000FF);
+
+	m_State.screen_Colors[0].r = red;
+	m_State.screen_Colors[0].g = green;
+	m_State.screen_Colors[0].b = blue;
+	
+	color_string = m_State.game_settings[key]["options"].get("fillColor", "#008080").asString();
+	red   = (stoi(color_string.substr(1), nullptr, 16) & 0xFF0000 ) >> 16;
+	green = (stoi(color_string.substr(1), nullptr, 16) & 0x00FF00 ) >>  8;
+	blue  = (stoi(color_string.substr(1), nullptr, 16) & 0x0000FF);
+
+	m_State.screen_Colors[1].r = red;
+	m_State.screen_Colors[1].g = green;
+	m_State.screen_Colors[1].b = blue;
+
+	color_string = m_State.game_settings[key]["options"].get("fillColor2", "#4CA6A6").asString();
+	red = (stoi(color_string.substr(1), nullptr, 16) & 0xFF0000) >> 16;
+	green = (stoi(color_string.substr(1), nullptr, 16) & 0x00FF00) >> 8;
+	blue = (stoi(color_string.substr(1), nullptr, 16) & 0x0000FF);
+
+	m_State.screen_Colors[2].r = red;
+	m_State.screen_Colors[2].g = green;
+	m_State.screen_Colors[2].b = blue;
+
+	color_string = m_State.game_settings[key]["options"].get("blendColor", "#99CCCC").asString();
+	red = (stoi(color_string.substr(1), nullptr, 16) & 0xFF0000) >> 16;
+	green = (stoi(color_string.substr(1), nullptr, 16) & 0x00FF00) >> 8;
+	blue = (stoi(color_string.substr(1), nullptr, 16) & 0x0000FF);
+
+	m_State.screen_Colors[3].r = red;
+	m_State.screen_Colors[3].g = green;
+	m_State.screen_Colors[3].b = blue;
+
+	//Set quirks.
+    //Note: This emulator assumes schip 1.1 behavior is normal and enables quirks for other behaviors
+	//      Octo takes the opposite approach and assumes Cosmac VIP is normal behavior
+	//      The settings database is Octo-centric, so many quirks in this engine are set opposite the database
+	bool optional_quirk = false;
+	optional_quirk = m_State.game_settings[key]["options"].get("shiftQuirks", !m_State.core->quirks.vip_shifts).asBool();
+	m_State.core->quirks.vip_shifts = !optional_quirk;
+
+	optional_quirk = m_State.game_settings[key]["options"].get("loadStoreQuirks", !m_State.core->quirks.vip_regs_read_write).asBool();
+	m_State.core->quirks.vip_regs_read_write = !optional_quirk;
+
+	optional_quirk = m_State.game_settings[key]["options"].get("jumpQuirks", !m_State.core->quirks.vip_jump).asBool();
+	m_State.core->quirks.vip_jump = !optional_quirk;
+	
+	optional_quirk = m_State.game_settings[key]["options"].get("vBlankQuirks", m_State.core->quirks.draw_vblank).asBool();
+	m_State.core->quirks.draw_vblank = optional_quirk;
+
+	optional_quirk = m_State.game_settings[key]["options"].get("logicQuirks", m_State.core->quirks.logic_flag_reset).asBool();
+	m_State.core->quirks.logic_flag_reset = optional_quirk;
+
+	optional_quirk = m_State.game_settings[key]["options"].get("clipQuirks", m_State.core->quirks.draw_wrap).asBool();
+	m_State.core->quirks.draw_wrap = optional_quirk;
+	
+
+
+}
+
+//not yet implemented. Will allow a user to manually save their preferences for the current game.
+void SDLFrontEnd::SavePrefs(std::string key)
+{
+
+	return;
+}
+
 void SDLFrontEnd::SetTitle()
 {
 	std::string temp_str("KIP-8");
 
-	if (!m_State.last_File.empty())
+	if (m_State.game_title != "")
+	{
+		temp_str += "    ";
+		temp_str += m_State.game_title;
+	}
+	else if (!m_State.last_File.empty())
 	{
 		temp_str += "    ";
 		size_t offset = m_State.last_File.find_last_of("/\\");
-		temp_str += m_State.last_File.substr(offset + 1);
+		m_State.game_title = m_State.last_File.substr(offset + 1);
+		temp_str += m_State.game_title;
 	}
 
 	if (m_Paused)
@@ -449,6 +566,25 @@ void SDLFrontEnd::Load(std::string filename)
 		LOG_ERROR("File did not open correctly!: {}", filename.c_str());
 		return;
 	}
+
+	if (m_State.last_File != filename)
+		m_State.last_File = filename;
+	m_State.game_title = "";
+	//TODO: the json lookup is case sensitive
+	std::string hash(SHA1::from_file(filename));
+	std::string lookup;
+	if (!m_State.games_hashes[hash].isNull())
+	{
+		lookup = m_State.games_hashes[hash].asString();
+		LoadPrefs(lookup);
+	}
+	else
+	{
+		LOG_INFO("Did not find hash: {}, {}", hash, filename);
+		LOG_INFO("Loading default preferences.");
+		LoadPrefs("default");
+	}
+
 	size_t size = ifd.tellg();
 	ifd.seekg(0, std::ios::beg);
 
@@ -457,8 +593,6 @@ void SDLFrontEnd::Load(std::string filename)
 		LOG_ERROR("File too large! {}", filename.c_str());
 		return;
 	}
-	if (m_State.last_File != filename)
-		m_State.last_File = filename;
 
 	m_State.core->ResetMemory(m_State.core->GetSystemMode() == Chip8::SYSTEM_MODE::SUPER_CHIP); //if in super-chip mode, randomize, otherwise zero out memory
 
@@ -473,11 +607,11 @@ void SDLFrontEnd::Load(std::string filename)
 	//automatically try to load rpl data if available
 	if (m_State.core->GetSystemMode() == Chip8::SYSTEM_MODE::SUPER_CHIP)
 	{
-		filename += ".rpl";
+		filename += ".sav";
 		ifd.open(filename, std::ios::binary | std::ios::ate);
 		if (!ifd.good())
 		{
-			LOG_WARN("Unable to open RPL file for reading: {}", filename.c_str());
+			LOG_WARN("Unable to open RPL flag save file for reading: {}", filename.c_str());
 			return;
 		}
 		size = ifd.tellg();
@@ -506,6 +640,7 @@ void SDLFrontEnd::HandleInput()
 			m_State.running = false;
 		if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(m_State.window))
 			m_State.running = false;
+
 
 		switch (event.type)
 		{

@@ -2,12 +2,13 @@
 #include <map>
 #include <vector>
 #pragma warning(push, 0)
-#include <SDL.h>
-#include "imgui.h"
-#include "imgui_impl_sdl.h"
+#include <SDL2/SDL.h>
+#include <imgui.h>
+#include <imgui_impl_sdl.h>
 #include "imgui_sdl.h"
 #include "imgui_memory_editor.h"
 #include "Stopwatch.h"
+#include "sha1.hpp"
 #pragma warning(pop)
 #include "ParentUI.h"
 #include "BasicUI.h"
@@ -67,6 +68,8 @@ private:
 	void ResetDisplayTexture();
 	void PersistRPL();
 	void SetTitle();
+	void LoadPrefs(std::string key);
+	void SavePrefs(std::string key);
 	void SetInternalKeys(UIState::KeyLayout layout);
 	void SetMappedKey(SDL_Scancode scancode, uint8_t index);
 

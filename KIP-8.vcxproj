@@ -72,23 +72,33 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Dev\KIP-8\spdlog;C:\Dev\KIP-8\imgui;C:\Dev\KIP-8\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Dev\KIP-8\SDL\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Dev\KIP-8\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>
+    </LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Dev\KIP-8\spdlog;C:\Dev\KIP-8\imgui;C:\Dev\KIP-8\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Dev\KIP-8\SDL\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Dev\KIP-8\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>
+    </LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Dev\KIP-8\spdlog;C:\Dev\KIP-8\inc;C:\Dev\KIP-8\imgui;C:\Dev\KIP-8\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Dev\KIP-8\SDL\lib\x64;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Dev\KIP-8\inc;C:\Dev\KIP-8\imgui;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Dev\KIP-8\spdlog;C:\Dev\KIP-8\inc;C:\Dev\KIP-8\imgui;C:\Dev\KIP-8\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Dev\KIP-8\SDL\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Dev\KIP-8\inc;C:\Dev\KIP-8\imgui;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgTriplet>x64-windows</VcpkgTriplet>
+    <VcpkgConfiguration>Debug</VcpkgConfiguration>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgTriplet>x64-windows</VcpkgTriplet>
+    <VcpkgConfiguration>Release</VcpkgConfiguration>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -102,7 +112,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -121,7 +131,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -132,7 +142,7 @@
       <ConformanceMode>false</ConformanceMode>
       <DisableSpecificWarnings>26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <LanguageStandard_C>Default</LanguageStandard_C>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -161,36 +171,34 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="imgui\imgui.cpp" />
-    <ClCompile Include="imgui\imguial_term.cpp" />
-    <ClCompile Include="imgui\imgui_demo.cpp" />
-    <ClCompile Include="imgui\imgui_draw.cpp" />
-    <ClCompile Include="imgui\imgui_impl_sdl.cpp" />
-    <ClCompile Include="imgui\imgui_plot.cpp" />
-    <ClCompile Include="imgui\imgui_sdl.cpp" />
-    <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\BasicUI.cpp" />
     <ClCompile Include="src\Chip8.cpp" />
     <ClCompile Include="src\DebugUI.cpp" />
+    <ClCompile Include="src\imguial_term.cpp" />
     <ClCompile Include="src\ImGui_Log.cpp" />
+    <ClCompile Include="src\imgui_plot.cpp" />
+    <ClCompile Include="src\imgui_sdl.cpp" />
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\ParentUI.cpp" />
     <ClCompile Include="src\SDLFrontEnd.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="imgui\imguial_button.h" />
-    <ClInclude Include="imgui\imguial_term.h" />
-    <ClInclude Include="imgui\imgui_memory_editor.h" />
-    <ClInclude Include="imgui\imgui_plot.h" />
     <ClInclude Include="inc\BasicUI.h" />
     <ClInclude Include="inc\Chip8.h" />
     <ClInclude Include="inc\DebugUI.h" />
+    <ClInclude Include="inc\imguial_button.h" />
+    <ClInclude Include="inc\imguial_term.h" />
     <ClInclude Include="inc\ImGui_Log.h" />
+    <ClInclude Include="inc\imgui_memory_editor.h" />
+    <ClInclude Include="inc\imgui_plot.h" />
+    <ClInclude Include="inc\imgui_sdl.h" />
     <ClInclude Include="inc\Logger.h" />
     <ClInclude Include="inc\ParentUI.h" />
     <ClInclude Include="inc\Registers.h" />
     <ClInclude Include="inc\SDLFrontEnd.h" />
+    <ClInclude Include="inc\sha1.hpp" />
+    <ClInclude Include="inc\Stopwatch.h" />
     <ClInclude Include="inc\UIState.h" />
   </ItemGroup>
   <ItemGroup>

@@ -4,7 +4,8 @@ void BasicUI::Init()
 {
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
-    ImGui_ImplSDL2_InitForSDL(fe_State->window);
+    ImGui_ImplSDL2_InitForD3D(fe_State->window); //this is a badly named function. it's not specific to D3D really
+    //ImGui_ImplSDL2_InitForSDL(fe_State->window);
     int win_w, win_h;
     SDL_GetWindowSize(fe_State->window, &win_w, &win_h);
     ImGuiSDL::Initialize(fe_State->renderer, win_w, win_h);

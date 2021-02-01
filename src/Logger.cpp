@@ -18,5 +18,5 @@ void Logger::Init()
 	auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("logs/kip8_log", 1048576 * 5, 3, false);
 	s_ClientLogger = std::make_shared<spdlog::logger>("KIP-8 Core", file_sink);
 	s_ClientLogger->sinks().push_back(console_sink);
-	s_ClientLogger->set_level(spdlog::level::warn);
+	s_ClientLogger->set_level(spdlog::level::info);
 }
