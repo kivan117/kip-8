@@ -79,6 +79,7 @@ private:
 	
 
 	uint8_t Keys[16] = { 0 }; //keypad keys
+	uint8_t PrevKeys[16] = { 0 };
 
 	Registers regs;
 
@@ -129,7 +130,7 @@ public:
 	void ResetWipeScreen() { wipe_screen = false; }
 	void SetHiRes() { res.hires = true; return; }
 	void SetLowRes() { res.hires = false; return; }
-	void SetKey(uint8_t key, uint8_t val) { Keys[key] = val; return; }
+	void SetKey(uint8_t key, uint8_t val) { PrevKeys[key] = Keys[key]; Keys[key] = val; return; }
 	uint8_t* GetRegV(uint8_t index) { return &regs.v[index % 0x10]; }
 	uint16_t* GetRegI() { return &regs.i; }
 	uint16_t* GetPC() { return &pc; }

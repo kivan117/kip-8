@@ -27,6 +27,7 @@ void Chip8::Reset() {
 	std::fill_n(PreviousFramebuffer, 128 * 64, 0);
 	
 	std::fill_n(Keys, 16, 0);
+	std::fill_n(PrevKeys, 16, 0);
 
 	sp = -1;
 	std::fill_n(Stack, 64, 0);
@@ -1034,8 +1035,9 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 			pc -= 2;
 			for (int i = 0; i < 16; i++)
 			{
-				if (Keys[i])
+				if (Keys[i] && !PrevKeys[i]) //only register keys which have been newly pressed by the player
 				{
+					PrevKeys[i] = Keys[i]; //hacky way of ignoring this key until it's released and pressed again
 					regs.v[op_nibs[1]] = i;
 					pc += 2;
 					break;

@@ -736,8 +736,10 @@ void SDLFrontEnd::HandleInput()
 			}
 			default:
 				break;
-			}
+		}
 	}
+
+	return;
 }
 
 void SDLFrontEnd::SetInternalKeys(UIState::KeyLayout layout)
