@@ -318,14 +318,15 @@ void SDLFrontEnd::DrawScreen()
 		{
 			SDL_SetRenderDrawColor(m_State.renderer, m_State.screen_Colors[0].r, m_State.screen_Colors[0].g, m_State.screen_Colors[0].b, m_State.screen_Colors[0].a);
 			SDL_RenderFillRect(m_State.renderer, NULL);
-			m_State.core->ResetWipeScreen();
+
+			//m_State.core->ResetWipeScreen();
 		}
 
 		uint8_t* CurrentFB = m_State.core->GetVRAM();
 		uint8_t* PreviousFramebuffer = m_State.core->GetPrevVRAM();
 		for (int i = 0; i < m_State.core->res.base_width * m_State.core->res.base_height; i++)
 		{
-			if (!m_State.optimize_Draw || (CurrentFB[i] ^ PreviousFramebuffer[i]))
+			if (m_State.core->GetWipeScreen() || CurrentFB[i] ^ PreviousFramebuffer[i])
 			{
 				int x = i % m_Res_Width;
 				int y = i / m_Res_Width;
@@ -343,6 +344,7 @@ void SDLFrontEnd::DrawScreen()
 
 		m_State.core->SaveCurrentVRAM(); //sets "previous frame buffer" based on the data we just drew
 		m_State.core->ResetScreenDirty();
+		m_State.core->ResetWipeScreen();
 
 		SDL_SetRenderTarget(m_State.renderer, nullptr);
     }

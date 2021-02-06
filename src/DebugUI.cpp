@@ -505,10 +505,6 @@ void DebugUI::ShowMenuOptions()
         {
             fe_State->grid_Toggled = true;
         }
-        if (ImGui::MenuItem("Optimize Draw", "", &(fe_State->optimize_Draw), true))
-        {
-        }
-        HelpMarker("Minimize redraw. May cause minor issues in some games.");
 
         const ImU32 u32_one = 1;
         ImGui::TextUnformatted("Zoom:");

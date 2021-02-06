@@ -10,7 +10,6 @@ typedef struct uistate {
 	bool running{ true };
 	unsigned int resolution_Zoom{ 8 };
 	bool zoom_Changed{ false };
-	bool optimize_Draw{ true };
 	SDL_Window* window{ nullptr };
 	SDL_Renderer* renderer{ nullptr };
 	SDL_Texture* screen_Texture{ nullptr };
