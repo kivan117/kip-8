@@ -111,7 +111,8 @@ private:
 public:
 	Chip8();
 	~Chip8();
-	void Reset();
+	void Reset() { Reset(""); }
+	void Reset(std::string message);
 	void ResetMemory(bool randomize);
 	void Load(const std::vector<unsigned char> &buffer);
 	void Run(uint16_t cycles);
@@ -142,7 +143,8 @@ public:
 	bool GetHalted() { return halted; }
 	void Halt() { halted = true; m_Run_Cycles = 0; return; }
 	void UnHalt() { halted = false; }
-	bool ToggleDebugStepping();
+	bool ToggleDebugStepping() { return ToggleDebugStepping(""); }
+	bool ToggleDebugStepping(std::string message);
 	void SetSystemMode(SYSTEM_MODE newmode);
 	SYSTEM_MODE GetSystemMode();
 	uint8_t* GetRAM() { return &Memory[0]; }

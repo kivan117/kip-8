@@ -454,7 +454,8 @@
             "backgroundColor":"#664400",
             "fillColor":"#AA4400",
             "buzzColor":"#F88379",
-            "quietColor":"#000000"
+            "quietColor":"#000000",
+            "clipQuirks":true
         }
     },
     "RPS": {
@@ -670,7 +671,8 @@
         "release":  "2018-10-31",
         "platform": "chip8",
         "options":  {
-            "tickrate":"200"
+            "tickrate":"200",
+			"vBlankQuirks":false
         }
     },
     "rockto": {
@@ -1826,7 +1828,7 @@
         "release":  "2020-07-30",
         "platform": "xochip",
         "options": {
-            "tickrate":100,
+            "tickrate":1000,
             "fillColor":"#43523d",
             "fillColor2":"#43523d",
             "blendColor":"#43523d",

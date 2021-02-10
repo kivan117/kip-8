@@ -49,7 +49,7 @@ protected:
 
     void flush_() override
     {
-        std::cout << std::flush;
+        imguial_buffered_log_instance->scrollToBottom();
     }
 };
 

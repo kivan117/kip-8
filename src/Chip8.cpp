@@ -7,14 +7,15 @@
 
 Chip8::Chip8()
 {
-	Reset();
+	Reset("Initializing");
 }
 Chip8::~Chip8()
 {
 }
 
-void Chip8::Reset() {
-	LOG_TRACE("System reset.");
+void Chip8::Reset(std::string message)
+{
+	LOG_DEBUG("CPU reset: {}", message);
 	srand((unsigned int)std::chrono::system_clock::now().time_since_epoch().count());
 	
 	ResetMemory(mode == SYSTEM_MODE::SUPER_CHIP);
@@ -127,19 +128,19 @@ void Chip8::SetScreenDirty()
 	screen_dirty = true;
 }
 
-bool Chip8::ToggleDebugStepping()
+bool Chip8::ToggleDebugStepping(std::string message)
 {
 	debug_stepping = !debug_stepping;
 	if (debug_stepping)
 	{
-		Logger::GetClientLogger()->set_level(spdlog::level::trace);
-		LOG_INFO("Begin Debug Stepping.");
+		Logger::GetLogger()->set_level(spdlog::level::trace);
+		LOG_DEBUG("Breakpoint: {}", message);
 		Halt();
 	}
 	else
 	{
-		LOG_INFO("End Debug Stepping.");
-		Logger::GetClientLogger()->set_level(spdlog::level::info);
+		LOG_DEBUG("Continue: {}", message);
+		Logger::GetLogger()->set_level(spdlog::level::info);
 		UnHalt();
 	}
 	return debug_stepping;
@@ -210,7 +211,7 @@ void Chip8::SetSystemMode(SYSTEM_MODE newmode)
 		default:
 			break;
 	}
-	Reset();
+	Reset("Changed System Mode.");
 }
 
 Chip8::SYSTEM_MODE Chip8::GetSystemMode()
@@ -823,8 +824,10 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 			for (int y = 0; y < sprite_height; y++)
 			{
 				bool coll_this_line = false; //track number of lines with collisions / clipping for SCHIP 1.1 quirk
-
-				dest_y = (regs.v[op_nibs[2]] + y);
+				if(mode == SYSTEM_MODE::XO_CHIP) //TODO: make this an octo-wrap-quirk toggle
+					dest_y = ((regs.v[op_nibs[2]] % (res.base_height / pixel_size)) + y);
+				else
+					dest_y = (regs.v[op_nibs[2]] + y);
 				if (dest_y >= (res.base_height / pixel_size))
 				{
 					if (quirks.draw_wrap)
@@ -854,7 +857,11 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 
 				for (int x = 0; x < sprite_width; x++)
 				{
-					dest_x = (regs.v[op_nibs[1]] + x);
+					if(mode == SYSTEM_MODE::XO_CHIP) //TODO make this an octo-wrap-quirk toggle
+						dest_x = ((regs.v[op_nibs[1]] % (res.base_width / pixel_size)) + x);
+					else
+						dest_x = (regs.v[op_nibs[1]] + x);
+
 					if (dest_x >= (res.base_width / pixel_size))
 					{
 						if (quirks.draw_wrap)

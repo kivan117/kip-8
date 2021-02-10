@@ -14,8 +14,8 @@ void DebugUI::Init()
     chip8_vram_editor.Cols = 64;
     auto imgui_logger = std::make_shared<imgui_log_sink_mt>(log);
     log->setFilterHeaderLabel("Filter");
-    Logger::GetClientLogger()->sinks().push_back(imgui_logger);
-    Logger::GetClientLogger()->set_level(spdlog::level::info);
+    Logger::GetLogger()->sinks().push_back(imgui_logger);
+    Logger::GetLogger()->set_level(spdlog::level::info);
 
     SDL_RendererInfo r_info;
     SDL_GetRendererInfo(fe_State->renderer, &r_info);
@@ -28,7 +28,7 @@ void DebugUI::Init()
 
 void DebugUI::Deinit()
 {
-    Logger::GetClientLogger()->set_level(spdlog::level::warn);
+    Logger::GetLogger()->set_level(spdlog::level::warn);
 	ImGuiSDL::Deinitialize();
 	ImGui::DestroyContext();
 }
@@ -170,24 +170,81 @@ void DebugUI::ShowCPUEditor(bool* p_open)
     ImGui::PopID();
     ImGui::Columns(1);
     ImGui::Separator();
-    if (ImGui::Button("Step"))
+    
+    if (ImGuiAl::Button("Break", !fe_State->core->GetDebugStepping()))
     {
-        if (!fe_State->core->GetDebugStepping())
-            fe_State->core->ToggleDebugStepping();
+        fe_State->core->ToggleDebugStepping("GUI Button");
+    }
+    ImGui::SameLine();
+    if (ImGuiAl::Button("Step", fe_State->core->GetDebugStepping()))
+    {
         fe_State->core->Step();
+    }
+    ImGui::SameLine();
+    if (ImGuiAl::Button("Continue", fe_State->core->GetDebugStepping()))
+    {
+        fe_State->core->ToggleDebugStepping("GUI Button");
     }
     ImGui::SameLine();
     if (ImGui::Button("Reset"))
     {
-        fe_State->core->Reset();
+        fe_State->core->Reset("GUI Button");
     }
-    ImGui::SameLine();
-    //ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !fe_State->core->GetDebugStepping());
-    if (ImGuiAl::Button("Run", fe_State->core->GetDebugStepping()))
+
+    static uint16_t pc_addr{ 0 }, pc_prev_addr{ 0 }, i_prev_addr{ 0 }, i_addr{ 0 };
+    
+    if (ImGui::Checkbox("Follow PC", &follow_pc))
     {
-        fe_State->core->ToggleDebugStepping();
+        if (follow_pc && follow_i)
+            follow_i = false;
+
+        if(follow_pc)
+            chip8_ram_editor.HighlightColor = IM_COL32(0, 160, 255, 160);
+        else
+        {
+            chip8_ram_editor.HighlightColor = IM_COL32(255, 255, 255, 50);
+            chip8_ram_editor.HighlightMin = (size_t)-1;
+            chip8_ram_editor.HighlightMax = (size_t)-1;
+        }
     }
-    //ImGui::PopItemFlag();
+    if (ImGui::Checkbox("Follow I", &follow_i))
+    {
+        if (follow_pc && follow_i)
+            follow_pc = false;
+
+        if (follow_i)
+            chip8_ram_editor.HighlightColor = IM_COL32(0, 160, 255, 160);
+        else
+        {
+            chip8_ram_editor.HighlightColor = IM_COL32(255, 255, 255, 50);
+            chip8_ram_editor.HighlightMin = (size_t)-1;
+            chip8_ram_editor.HighlightMax = (size_t)-1;
+        }
+
+    }
+    if (follow_pc)
+    {
+        pc_addr = *fe_State->core->GetPC();
+        if (pc_prev_addr != pc_addr)
+        {
+            chip8_ram_editor.GotoAddr = pc_addr;
+            pc_prev_addr = pc_addr;
+        }
+        chip8_ram_editor.HighlightMin = pc_addr;
+        chip8_ram_editor.HighlightMax = (pc_addr + 2);
+    }
+    else if (follow_i)
+    {
+        i_addr = *fe_State->core->GetRegI();
+        if (i_prev_addr != i_addr)
+        {
+            chip8_ram_editor.GotoAddr = i_addr;
+            i_prev_addr = i_addr;
+        }
+        chip8_ram_editor.HighlightMin = i_addr;
+        chip8_ram_editor.HighlightMax = (i_addr + 2);
+    }
+
     ImGui::End();
 }
 
@@ -213,12 +270,19 @@ void DebugUI::ShowDisplayWindow(bool* p_open)
 
 void DebugUI::ShowLogWindow(bool* p_open)
 {
+    static bool scroll_to_bottom = true;
     ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
     if(!ImGui::Begin("Log", p_open))
     {
         ImGui::End();
         return;
     }
+    ImGui::Checkbox("Scroll to Bottom", &scroll_to_bottom);
+    if (scroll_to_bottom)
+        log->scrollToBottom();
+    ImGui::SameLine();
+    if (ImGuiAl::Button("Clear Log", true))
+        log->clear();
     log->draw();
     ImGui::End();
 }
@@ -230,8 +294,9 @@ void DebugUI::ShowRAMWindow(bool* p_open)
     {
         ImGui::End();
         return;
-    }
+    }    
     chip8_ram_editor.DrawContents(fe_State->core->GetRAM(), sizeof(uint8_t) * (((unsigned long long)fe_State->core->GetRAMLimit())+1), 0); //TODO: don't hard code ram size
+    
     ImGui::End();
 }
 
@@ -415,7 +480,7 @@ void DebugUI::ShowMenuFile()
     ImGui::PopItemFlag();
     if (ImGui::MenuItem("Reload", ""))
     {
-        fe_State->core->Reset();
+        fe_State->core->Reset("Reload file.");
         if (fe_State->last_File != "")
         {
             fe_State->core->Load(fe_State->file_data);
@@ -501,15 +566,12 @@ void DebugUI::ShowMenuOptions()
 {
     if (ImGui::BeginMenu("Display"))
     {
-        if (ImGui::MenuItem("Draw Pixel Grid", "", &(fe_State->debug_Grid_Lines), true))
+        if (ImGui::Checkbox("Draw Pixel Grid", &(fe_State->debug_Grid_Lines)))
         {
             fe_State->grid_Toggled = true;
         }
-
         const ImU32 u32_one = 1;
-        ImGui::TextUnformatted("Zoom:");
-        ImGui::SameLine();
-        if (ImGui::InputScalar("", ImGuiDataType_U32, &(fe_State->resolution_Zoom), &u32_one, NULL, "%u")) { fe_State->zoom_Changed = true; }
+        if (ImGui::InputScalar("Zoom", ImGuiDataType_U32, &(fe_State->resolution_Zoom), &u32_one, NULL, "%u")) { fe_State->zoom_Changed = true; }
         if (fe_State->resolution_Zoom < 1) { fe_State->resolution_Zoom = 1; }
 
         if (ImGui::BeginMenu("Colors"))

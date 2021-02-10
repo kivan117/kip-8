@@ -264,7 +264,6 @@ bool SDLFrontEnd::Run()
 		if (result.size())
 		{
 			m_State.last_File = result[0];
-			m_State.core->Reset();
 			Load(result[0]);
 		}
 		m_State.open_File = nullptr;
@@ -308,7 +307,6 @@ void SDLFrontEnd::DrawScreen()
 		ResetResolution();
 	}
 
-
     if (m_State.core->GetScreenDirty())
     {
 
@@ -318,15 +316,13 @@ void SDLFrontEnd::DrawScreen()
 		{
 			SDL_SetRenderDrawColor(m_State.renderer, m_State.screen_Colors[0].r, m_State.screen_Colors[0].g, m_State.screen_Colors[0].b, m_State.screen_Colors[0].a);
 			SDL_RenderFillRect(m_State.renderer, NULL);
-
-			//m_State.core->ResetWipeScreen();
 		}
 
 		uint8_t* CurrentFB = m_State.core->GetVRAM();
 		uint8_t* PreviousFramebuffer = m_State.core->GetPrevVRAM();
 		for (int i = 0; i < m_State.core->res.base_width * m_State.core->res.base_height; i++)
 		{
-			if (m_State.core->GetWipeScreen() || CurrentFB[i] ^ PreviousFramebuffer[i])
+			if (m_State.core->GetWipeScreen() || (CurrentFB[i] ^ PreviousFramebuffer[i]))
 			{
 				int x = i % m_Res_Width;
 				int y = i / m_Res_Width;
@@ -337,8 +333,10 @@ void SDLFrontEnd::DrawScreen()
 					m_Pixel.x += x + 1;
 					m_Pixel.y += y + 1;
 				}
+
 				SDL_SetRenderDrawColor(m_State.renderer, m_State.screen_Colors[CurrentFB[i]].r, m_State.screen_Colors[CurrentFB[i]].g, m_State.screen_Colors[CurrentFB[i]].b, 0xFF);
-				SDL_RenderFillRect(m_State.renderer, &m_Pixel);
+				SDL_RenderFillRect(m_State.renderer, &m_Pixel);	
+
 			}
 		}
 
@@ -678,7 +676,7 @@ void SDLFrontEnd::HandleInput()
 					}
 					case(SDL_SCANCODE_F8):
 					{
-						m_State.core->Reset();
+						m_State.core->Reset("Keyboard Hotkey");
 						break;
 					}
 					default:

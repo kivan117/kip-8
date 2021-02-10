@@ -32,6 +32,10 @@ private:
 	bool show_key_remap;
 	//custom_command_struct cmd_struct;
 	//ImTerm::terminal<ImTerm_Commands> *terminal_log;
+
+	bool follow_pc;
+	bool follow_i;
+
 	MemoryEditor chip8_vram_editor, chip8_ram_editor;
 
 	std::shared_ptr<ImGuiAl::BufferedLog<16384>> log = std::make_shared<ImGuiAl::BufferedLog<16384>>();
@@ -51,10 +55,9 @@ private:
 	void ShowMenuWindows();
 	void ShowMenuOptions();
 public:
-	//DebugUI(UIState* shared_state) : fe_State(shared_state), show_regs(true), show_display(true), show_ram(false),
-	//	show_vram(false), show_menu_bar(true), show_stack(false), show_log(false), show_audio(false), terminal_log(nullptr) {}
 	DebugUI(UIState* shared_state) : fe_State(shared_state), show_regs(true), show_display(true), show_ram(false),
-		show_vram(false), show_menu_bar(true), show_stack(false), show_log(false), show_audio(false), show_key_remap(false) {}
+		show_vram(false), show_menu_bar(true), show_stack(false), show_log(false), show_audio(false), show_key_remap(false),
+	    follow_pc(false), follow_i(false) {}
 	void Init() override;
 	void Deinit() override;
 	void Draw() override;

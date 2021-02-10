@@ -500,7 +500,7 @@ struct MemoryEditor
                 ImGui::SetScrollFromPosY(ImGui::GetCursorStartPos().y + (GotoAddr / Cols) * ImGui::GetTextLineHeight());
                 ImGui::EndChild();
                 DataEditingAddr = DataPreviewAddr = GotoAddr;
-                DataEditingTakeFocus = true;
+                //DataEditingTakeFocus = true;
             }
             GotoAddr = (size_t)-1;
         }
