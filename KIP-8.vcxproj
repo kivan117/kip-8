@@ -94,7 +94,7 @@
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <VcpkgTriplet>x64-windows</VcpkgTriplet>
-    <VcpkgConfiguration>Debug</VcpkgConfiguration>
+    <VcpkgConfiguration>Release</VcpkgConfiguration>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <VcpkgTriplet>x64-windows</VcpkgTriplet>
@@ -163,7 +163,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -186,6 +186,7 @@
   <ItemGroup>
     <ClInclude Include="inc\BasicUI.h" />
     <ClInclude Include="inc\Chip8.h" />
+    <ClInclude Include="inc\CLI11.hpp" />
     <ClInclude Include="inc\DebugUI.h" />
     <ClInclude Include="inc\imguial_button.h" />
     <ClInclude Include="inc\imguial_term.h" />

@@ -50,7 +50,7 @@ private:
 	//breaking out input into 2 maps lets us change the user's input keys or the emulated key layout without affecting both
 	std::map<uint8_t, uint8_t> keymap_internal; //maps from internal key matrix to current key layout
 	std::map<SDL_Scancode, uint8_t> keymap; //maps scancodes for player's kayboard to current key layout
-
+	
 	//the important shared data between this SDL front end and the ImGui menus/windows
 	UIState m_State;
 

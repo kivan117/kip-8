@@ -239,7 +239,7 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 			else
 			{
 
-				if (op_nibs[3] == 0)
+				if (op_nibs[3] == 0) //edge case elimination. do not scroll the screen 0 lines
 					break;
 				
 				SetScreenDirty();
@@ -777,7 +777,7 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 		//xo-chip has 2, layered over each other, with 4 colors representing the 2-bits per pixel combinations
 
 
-		regs.v[0xF] = 0;
+		
 		if (!active_plane) //if no drawing planes are active, then just reset VF
 			break;
 		SetScreenDirty(); //if any plane IS selected, mark the screen as needing to be redrawn
@@ -808,13 +808,18 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 
 		uint16_t new_pixel=0;
 
-		uint8_t dest_y, dest_x, schip_line_collisions;
+		uint8_t start_y, start_x, dest_y, dest_x, schip_line_collisions;
+
+		start_x = regs.v[op_nibs[1]]; //need these temp variables in case some crazy people feed VF in as X or Y
+		start_y = regs.v[op_nibs[2]];
 		schip_line_collisions = 0;
 
 		uint16_t mask = 1 << 15;
 		mask = mask >> (16 - sprite_width); //we'll read in either 1 or 2 bytes of sprite data per row. we then use this bitmask to check each bit to see if we draw that pixel to the screen.
 
 		uint16_t sprite_data_i = regs.i;
+
+		regs.v[0xF] = 0;
 
 		for (int plane_it = 1; plane_it < 3; plane_it++) //TODO: don't hard code 2 planes here, config for variable number of max draw planes (for future 16-color chip extension)
 		{
@@ -825,9 +830,9 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 			{
 				bool coll_this_line = false; //track number of lines with collisions / clipping for SCHIP 1.1 quirk
 				if(mode == SYSTEM_MODE::XO_CHIP) //TODO: make this an octo-wrap-quirk toggle
-					dest_y = ((regs.v[op_nibs[2]] % (res.base_height / pixel_size)) + y);
+					dest_y = ((start_y % (res.base_height / pixel_size)) + y);
 				else
-					dest_y = (regs.v[op_nibs[2]] + y);
+					dest_y = (start_y + y);
 				if (dest_y >= (res.base_height / pixel_size))
 				{
 					if (quirks.draw_wrap)
@@ -858,9 +863,9 @@ void Chip8::Decode_Execute(uint16_t opcode) {
 				for (int x = 0; x < sprite_width; x++)
 				{
 					if(mode == SYSTEM_MODE::XO_CHIP) //TODO make this an octo-wrap-quirk toggle
-						dest_x = ((regs.v[op_nibs[1]] % (res.base_width / pixel_size)) + x);
+						dest_x = ((start_x % (res.base_width / pixel_size)) + x);
 					else
-						dest_x = (regs.v[op_nibs[1]] + x);
+						dest_x = (start_x + x);
 
 					if (dest_x >= (res.base_width / pixel_size))
 					{

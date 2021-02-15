@@ -100,6 +100,8 @@ int SDLFrontEnd::initVideo()
         return -1;
     }
 
+	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+
 	if(debug_interface)
 		m_State.window = SDL_CreateWindow("KIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
 	else
@@ -209,6 +211,8 @@ void SDLFrontEnd::deinit()
 		imgui_UI = nullptr;
 	}
 
+	if(m_State.open_File)
+		m_State.open_File->kill();
 
     SDL_Quit();
 }
@@ -226,7 +230,6 @@ void SDLFrontEnd::deinitVideo()
 
 	SDL_DestroyRenderer(m_State.renderer);
     SDL_DestroyWindow(m_State.window);
-    
 	
 }
 
@@ -343,12 +346,60 @@ void SDLFrontEnd::DrawScreen()
 		m_State.core->SaveCurrentVRAM(); //sets "previous frame buffer" based on the data we just drew
 		m_State.core->ResetScreenDirty();
 		m_State.core->ResetWipeScreen();
-
-		SDL_SetRenderTarget(m_State.renderer, nullptr);
     }
 	SDL_SetRenderTarget(m_State.renderer, nullptr);
-	if(!debug_interface)
-		SDL_RenderCopy(m_State.renderer, m_State.screen_Texture, NULL, NULL);  
+	if (!debug_interface) //in normal ui, we draw to the window.
+	{
+		
+
+		if (m_State.screen_Rotation == 90 || m_State.screen_Rotation == 270)
+		{
+			SDL_Rect dstrect;
+			int win_h, win_w;
+			SDL_GetWindowSize(m_State.window, &win_w, &win_h);
+			dstrect.x = (win_w - win_h) / 2 - 1;
+			dstrect.y = (win_h - win_w) / 2;
+			dstrect.w = win_h;
+			dstrect.h = win_w;
+			SDL_RenderCopyEx(m_State.renderer, m_State.screen_Texture, nullptr, &dstrect, m_State.screen_Rotation, nullptr, SDL_FLIP_NONE);
+		}
+		else if (m_State.screen_Rotation == 180)
+		{
+			SDL_RenderCopyEx(m_State.renderer, m_State.screen_Texture, nullptr, nullptr, m_State.screen_Rotation, nullptr, SDL_FLIP_NONE);
+		}
+		else
+			SDL_RenderCopy(m_State.renderer, m_State.screen_Texture, NULL, NULL);
+	}
+	else //in debug gui, we draw to the rotation buffer if the screen is rotated. the debug gui will then draw either the screen texture or rotation buffer
+	{
+		if (m_State.screen_Rotation == 90 || m_State.screen_Rotation == 270)
+		{
+			SDL_Rect dstrect;
+			int win_w = (m_State.core->res.base_width * m_State.resolution_Zoom);
+			int win_h = (m_State.core->res.base_height * m_State.resolution_Zoom);
+
+			if (m_State.debug_Grid_Lines)
+			{
+				win_w += m_State.core->res.base_width + 1;
+				win_h += m_State.core->res.base_height + 1;
+			}
+
+			dstrect.y = -(win_h - win_w) / 2; // (win_w - win_h) / 2 - 1;
+			dstrect.x = -(win_w - win_h) / 2 - 1; // (win_h - win_w) / 2;
+			dstrect.w = win_w;
+			dstrect.h = win_h;
+
+			SDL_SetRenderTarget(m_State.renderer, m_State.rotation_Buffer);
+			SDL_RenderCopyEx(m_State.renderer, m_State.screen_Texture, nullptr, &dstrect, m_State.screen_Rotation, nullptr, SDL_FLIP_NONE);
+		}
+		else if (m_State.screen_Rotation == 180)
+		{
+			SDL_SetRenderTarget(m_State.renderer, m_State.rotation_Buffer);
+			SDL_RenderCopyEx(m_State.renderer, m_State.screen_Texture, nullptr, nullptr, m_State.screen_Rotation, nullptr, SDL_FLIP_NONE);
+		}
+	}
+
+	SDL_SetRenderTarget(m_State.renderer, nullptr);
 }
 
 void SDLFrontEnd::ResetResolution()
@@ -363,8 +414,12 @@ void SDLFrontEnd::ResetResolution()
 
 void SDLFrontEnd::ResetDisplayTexture()
 {
-	if (m_State.screen_Texture)
+	SDL_Texture* temp_tex = nullptr;
+
+	/*if (m_State.screen_Texture)
 		SDL_DestroyTexture(m_State.screen_Texture);
+	if(m_State.rotation_Buffer)
+		SDL_DestroyTexture(m_State.rotation_Buffer);*/
 
 	int new_w, new_h;
 
@@ -379,17 +434,68 @@ void SDLFrontEnd::ResetDisplayTexture()
 		new_h = (m_State.core->res.base_height * m_State.resolution_Zoom);
 	}
 
-	m_State.screen_Texture = SDL_CreateTexture(m_State.renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, new_w, new_h);
-	SDL_SetRenderTarget(m_State.renderer, m_State.screen_Texture);
+	temp_tex = SDL_CreateTexture(m_State.renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, new_w, new_h);
+	if (!temp_tex)
+		LOG_ERROR("Failed to create texture: {}", SDL_GetError());
+	else
+	{
+		SDL_DestroyTexture(m_State.screen_Texture);
+		m_State.screen_Texture = temp_tex;// SDL_CreateTexture(m_State.renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, new_w, new_h);
+	}
+	
+	if (m_State.screen_Rotation == 90 || m_State.screen_Rotation == 270)
+	{
+		temp_tex = SDL_CreateTexture(m_State.renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, new_h, new_w);
+		//m_State.rotation_Buffer = SDL_CreateTexture(m_State.renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, new_h, new_w);
+	}
+	else
+	{
+		temp_tex = SDL_CreateTexture(m_State.renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, new_w, new_h);
+		//m_State.rotation_Buffer = SDL_CreateTexture(m_State.renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, new_w, new_h);
+	}
+
+	if (!temp_tex)
+		LOG_ERROR("Failed to create texture: {}", SDL_GetError());
+	else
+	{
+		SDL_DestroyTexture(m_State.rotation_Buffer);
+		m_State.rotation_Buffer = temp_tex;// SDL_CreateTexture(m_State.renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, new_w, new_h);
+	}
+	
 	SDL_SetRenderDrawColor(m_State.renderer, m_State.screen_Colors[0].r, m_State.screen_Colors[0].g, m_State.screen_Colors[0].b, m_State.screen_Colors[0].a);
+	
+	SDL_SetRenderTarget(m_State.renderer, m_State.screen_Texture);
 	SDL_RenderClear(m_State.renderer);
+
+	SDL_SetRenderTarget(m_State.renderer, m_State.rotation_Buffer);
+	SDL_RenderClear(m_State.renderer);
+
 	SDL_SetRenderTarget(m_State.renderer, nullptr);
 	std::fill_n(m_State.core->GetPrevVRAM(), 128 * 64, 0);
 	m_State.core->SetScreenDirty();
 	m_State.core->SetWipeScreen();
 
 	if (!debug_interface)
-		SDL_SetWindowSize(m_State.window, new_w, new_h);
+	{
+
+		new_w = (m_State.core->res.base_width * m_State.resolution_Zoom) + m_State.core->res.base_width + 1;
+		new_h = (m_State.core->res.base_height * m_State.resolution_Zoom) + m_State.core->res.base_height + 1;
+
+		if (m_State.core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+		{
+			new_w *= 2;
+			new_h *= 2;
+		}
+
+		if (m_State.screen_Rotation == 90 || m_State.screen_Rotation == 270)
+		{
+			SDL_SetWindowSize(m_State.window, new_h, new_w);
+		}
+		else
+		{
+			SDL_SetWindowSize(m_State.window, new_w, new_h);
+		}
+	}
 
 	return;
 }
@@ -434,31 +540,33 @@ void SDLFrontEnd::LoadPrefs(std::string key)
 	std::string sys_mode = m_State.game_settings[key].get("platform", "chip8").asString();
 	if (sys_mode == "chip8")
 	{
-		if (m_State.core->GetSystemMode() != Chip8::SYSTEM_MODE::CHIP_8)
+		/*if (m_State.core->GetSystemMode() != Chip8::SYSTEM_MODE::CHIP_8)
 		{
 			m_State.resolution_Zoom = m_State.resolution_Zoom * 2;
 			m_State.zoom_Changed = true;
-		}
+		}*/
 		m_State.core->SetSystemMode(Chip8::SYSTEM_MODE::CHIP_8);
 	}
 	else if (sys_mode == "schip")
 	{
-		if (m_State.core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+		/*if (m_State.core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
 		{
 			m_State.resolution_Zoom = m_State.resolution_Zoom / 2;
 			m_State.zoom_Changed = true;
-		}
+		}*/
 		m_State.core->SetSystemMode(Chip8::SYSTEM_MODE::SUPER_CHIP);
 	}
 	else																// if (sys_mode == "xochip")
 	{
-		if (m_State.core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+		/*if (m_State.core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
 		{
 			m_State.resolution_Zoom = m_State.resolution_Zoom / 2;
 			m_State.zoom_Changed = true;
-		}
+		}*/
 		m_State.core->SetSystemMode(Chip8::SYSTEM_MODE::XO_CHIP);
 	}
+
+	m_State.zoom_Changed = true;
 
 	//set colors
 	uint8_t red, green, blue;
@@ -498,6 +606,10 @@ void SDLFrontEnd::LoadPrefs(std::string key)
 	m_State.screen_Colors[3].r = red;
 	m_State.screen_Colors[3].g = green;
 	m_State.screen_Colors[3].b = blue;
+
+	//set screen rotation
+	m_State.screen_Rotation = (uint16_t)stoi(m_State.game_settings[key]["options"].get("screenRotation", "0").asString());
+	ResetResolution();
 
 	//Set quirks.
     //Note: This emulator assumes schip 1.1 behavior is normal and enables quirks for other behaviors

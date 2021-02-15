@@ -256,14 +256,38 @@ void DebugUI::ShowDisplayWindow(bool* p_open)
     unsigned int res_h = fe_State->core->res.base_height;
     //ImGui::ImGuiWindowFlags_AlwaysAutoResize;
     //ImGui::SetNextWindowSize(ImVec2((float)((res_w * zoom) + res_w + 1), (float)((res_h * zoom) + res_h + 1)), ImGuiCond_Always);
-    ImGui::SetNextWindowContentSize(ImVec2((float)((res_w * zoom) + res_w + 1), (float)((res_h * zoom) + res_h + 1)));
+    static ImVec2 screen_size;
+    if (fe_State->screen_Rotation == 90 || fe_State->screen_Rotation == 270)
+    {
+        screen_size.x = (float)((res_h * zoom) + res_h + 1);
+        screen_size.y = (float)((res_w * zoom) + res_w + 1);
+        //ImGui::SetNextWindowContentSize(ImVec2((float)((res_h * zoom) + res_h + 1), (float)((res_w * zoom) + res_w + 1)));
+    }
+    else
+    {
+        screen_size.x = (float)((res_w * zoom) + res_w + 1);
+        screen_size.y = (float)((res_h * zoom) + res_h + 1);
+        //ImGui::SetNextWindowContentSize(ImVec2((float)((res_w * zoom) + res_w + 1), (float)((res_h * zoom) + res_h + 1)));
+    }
+    if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+    {
+        screen_size.x *= 2;
+        screen_size.y *= 2;
+    }
+
+    ImGui::SetNextWindowContentSize(screen_size);
+
     if (!ImGui::Begin("Display", p_open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize))
     {
         ImGui::End();
         return;
     }
     //ImGui::Image(fe_State->screen_Texture, ImVec2((float)((res_w * zoom) + res_w + 1),(float)((res_h * zoom) + res_h + 1)));
-    ImGui::Image(fe_State->screen_Texture, ImGui::GetContentRegionAvail());
+    
+    if(fe_State->screen_Rotation)
+        ImGui::Image(fe_State->rotation_Buffer, ImGui::GetContentRegionAvail());
+    else
+        ImGui::Image(fe_State->screen_Texture, ImGui::GetContentRegionAvail());
     ImGui::End();
 
 }
@@ -504,34 +528,37 @@ void DebugUI::ShowMenuEmulation()
     {
         if (ImGui::MenuItem("COSMAC VIP (CHIP-8)", NULL, fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8 ? true : false))
         {
-            if (fe_State->core->GetSystemMode() != Chip8::SYSTEM_MODE::CHIP_8)
-            {
-                fe_State->resolution_Zoom = fe_State->resolution_Zoom * 2;
-                fe_State->zoom_Changed = true;
-            }
+            //if (fe_State->core->GetSystemMode() != Chip8::SYSTEM_MODE::CHIP_8)
+            //{
+            //    fe_State->resolution_Zoom = fe_State->resolution_Zoom * 2;
+            //    fe_State->zoom_Changed = true;
+            //}
             fe_State->core->SetSystemMode(Chip8::SYSTEM_MODE::CHIP_8);
+            fe_State->zoom_Changed = true;
         }
         HelpMarker("Original COSMAC VIP CHIP-8 interpreter.");
         
         if (ImGui::MenuItem("HP-48 (SUPER-CHIP)", NULL, fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::SUPER_CHIP ? true : false))
         {
-            if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
-            {
-                fe_State->resolution_Zoom = fe_State->resolution_Zoom / 2;
-                fe_State->zoom_Changed = true;
-            }
+            //if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+            //{
+            //    fe_State->resolution_Zoom = fe_State->resolution_Zoom / 2;
+            //    fe_State->zoom_Changed = true;
+            //}
             fe_State->core->SetSystemMode(Chip8::SYSTEM_MODE::SUPER_CHIP);
+            fe_State->zoom_Changed = true;
         }
         HelpMarker("SUPER-CHIP 1.1 for HP-48 series calculators.");
 
         if (ImGui::MenuItem("Octo (XO-CHIP)", NULL, fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::XO_CHIP ? true : false))
         {
-            if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
-            {
-                fe_State->resolution_Zoom = fe_State->resolution_Zoom / 2;
-                fe_State->zoom_Changed = true;
-            }
+            //if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+            //{
+            //    fe_State->resolution_Zoom = fe_State->resolution_Zoom / 2;
+            //    fe_State->zoom_Changed = true;
+            //}
             fe_State->core->SetSystemMode(Chip8::SYSTEM_MODE::XO_CHIP);
+            fe_State->zoom_Changed = true;
         }
         HelpMarker("Octo IDE XO-CHIP compatibility.");
 
@@ -573,6 +600,25 @@ void DebugUI::ShowMenuOptions()
         const ImU32 u32_one = 1;
         if (ImGui::InputScalar("Zoom", ImGuiDataType_U32, &(fe_State->resolution_Zoom), &u32_one, NULL, "%u")) { fe_State->zoom_Changed = true; }
         if (fe_State->resolution_Zoom < 1) { fe_State->resolution_Zoom = 1; }
+        
+        if (ImGui::BeginMenu("Screen Rotation"))
+        {
+            if (ImGui::RadioButton("0", &((int)fe_State->screen_Rotation), 0))
+                fe_State->grid_Toggled = true;
+            if(ImGui::RadioButton("90", &((int)fe_State->screen_Rotation), 90))
+                fe_State->grid_Toggled = true;
+            if(ImGui::RadioButton("180", &((int)fe_State->screen_Rotation), 180))
+                fe_State->grid_Toggled = true;
+            if(ImGui::RadioButton("270", &((int)fe_State->screen_Rotation), 270))
+                fe_State->grid_Toggled = true;
+            ImGui::EndMenu();
+        }
+
+        static ImVec4 background_color = ImVec4((float)fe_State->screen_Colors[0].r / 255.0f, (float)fe_State->screen_Colors[0].g / 255.0f, (float)fe_State->screen_Colors[0].b / 255.0f, 255.0f / 255.0f);
+        static ImVec4 foreground_color_1 = ImVec4((float)fe_State->screen_Colors[1].r / 255.0f, (float)fe_State->screen_Colors[1].g / 255.0f, (float)fe_State->screen_Colors[1].b / 255.0f, 255.0f / 255.0f);
+        static ImVec4 foreground_color_2 = ImVec4((float)fe_State->screen_Colors[2].r / 255.0f, (float)fe_State->screen_Colors[2].g / 255.0f, (float)fe_State->screen_Colors[2].b / 255.0f, 255.0f / 255.0f);
+        static ImVec4 overlap_color = ImVec4((float)fe_State->screen_Colors[3].r / 255.0f, (float)fe_State->screen_Colors[3].g / 255.0f, (float)fe_State->screen_Colors[3].b / 255.0f, 255.0f / 255.0f);
+        static ImVec4 backup_color;
 
         if (ImGui::BeginMenu("Colors"))
         {
@@ -582,11 +628,12 @@ void DebugUI::ShowMenuOptions()
             static bool drag_and_drop = true;
             static bool options_menu = true;
             static bool hdr = false;
-            static ImVec4 background_color   = ImVec4((float)fe_State->screen_Colors[0].r / 255.0f, (float)fe_State->screen_Colors[0].g / 255.0f, (float)fe_State->screen_Colors[0].b / 255.0f, 255.0f / 255.0f);
-            static ImVec4 foreground_color_1 = ImVec4((float)fe_State->screen_Colors[1].r / 255.0f, (float)fe_State->screen_Colors[1].g / 255.0f, (float)fe_State->screen_Colors[1].b / 255.0f, 255.0f / 255.0f);
-            static ImVec4 foreground_color_2 = ImVec4((float)fe_State->screen_Colors[2].r / 255.0f, (float)fe_State->screen_Colors[2].g / 255.0f, (float)fe_State->screen_Colors[2].b / 255.0f, 255.0f / 255.0f);
-            static ImVec4 overlap_color      = ImVec4((float)fe_State->screen_Colors[3].r / 255.0f, (float)fe_State->screen_Colors[3].g / 255.0f, (float)fe_State->screen_Colors[3].b / 255.0f, 255.0f / 255.0f);
-            static ImVec4 backup_color;
+
+            background_color = ImVec4((float)fe_State->screen_Colors[0].r / 255.0f, (float)fe_State->screen_Colors[0].g / 255.0f, (float)fe_State->screen_Colors[0].b / 255.0f, 255.0f / 255.0f);
+            foreground_color_1 = ImVec4((float)fe_State->screen_Colors[1].r / 255.0f, (float)fe_State->screen_Colors[1].g / 255.0f, (float)fe_State->screen_Colors[1].b / 255.0f, 255.0f / 255.0f);
+            foreground_color_2 = ImVec4((float)fe_State->screen_Colors[2].r / 255.0f, (float)fe_State->screen_Colors[2].g / 255.0f, (float)fe_State->screen_Colors[2].b / 255.0f, 255.0f / 255.0f);
+            overlap_color = ImVec4((float)fe_State->screen_Colors[3].r / 255.0f, (float)fe_State->screen_Colors[3].g / 255.0f, (float)fe_State->screen_Colors[3].b / 255.0f, 255.0f / 255.0f);
+
             ImGuiColorEditFlags misc_flags = (hdr ? ImGuiColorEditFlags_HDR : 0) | (drag_and_drop ? 0 : ImGuiColorEditFlags_NoDragDrop) | (alpha_half_preview ? ImGuiColorEditFlags_AlphaPreviewHalf : (alpha_preview ? ImGuiColorEditFlags_AlphaPreview : 0)) | (options_menu ? 0 : ImGuiColorEditFlags_NoOptions);
             // Generate a default palette. The palette will persist and can be edited.
             static bool saved_palette_init = true;
@@ -986,8 +1033,6 @@ void DebugUI::ShowMenuOptions()
         }
 
         ImGui::EndMenu();
-
-
 
     }
 

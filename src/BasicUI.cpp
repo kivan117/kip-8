@@ -120,34 +120,37 @@ void BasicUI::ShowMenuEmulation()
     {
         if (ImGui::MenuItem("COSMAC VIP (CHIP-8)", NULL, fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8 ? true : false))
         {
-            if (fe_State->core->GetSystemMode() != Chip8::SYSTEM_MODE::CHIP_8)
+            /*if (fe_State->core->GetSystemMode() != Chip8::SYSTEM_MODE::CHIP_8)
             {
                 fe_State->resolution_Zoom = fe_State->resolution_Zoom * 2;
                 fe_State->zoom_Changed = true;
-            }
+            }*/
             fe_State->core->SetSystemMode(Chip8::SYSTEM_MODE::CHIP_8);
+            fe_State->zoom_Changed = true;
         }
         HelpMarker("Original COSMAC VIP CHIP-8 interpreter.");
 
         if (ImGui::MenuItem("HP-48 (SUPER-CHIP)", NULL, fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::SUPER_CHIP ? true : false))
         {
-            if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+            /*if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
             {
                 fe_State->resolution_Zoom = fe_State->resolution_Zoom / 2;
                 fe_State->zoom_Changed = true;
-            }
+            }*/
             fe_State->core->SetSystemMode(Chip8::SYSTEM_MODE::SUPER_CHIP);
+            fe_State->zoom_Changed = true;
         }
         HelpMarker("SUPER-CHIP 1.1 for HP-48 series calculators.");
 
         if (ImGui::MenuItem("Octo (XO-CHIP)", NULL, fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::XO_CHIP ? true : false))
         {
-            if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
+            /*if (fe_State->core->GetSystemMode() == Chip8::SYSTEM_MODE::CHIP_8)
             {
                 fe_State->resolution_Zoom = fe_State->resolution_Zoom / 2;
                 fe_State->zoom_Changed = true;
-            }
+            }*/
             fe_State->core->SetSystemMode(Chip8::SYSTEM_MODE::XO_CHIP);
+            fe_State->zoom_Changed = true;
         }
         HelpMarker("Octo IDE XO-CHIP compatibility.");
 
@@ -182,6 +185,24 @@ void BasicUI::ShowMenuOptions()
         if (ImGui::InputScalar("", ImGuiDataType_U32, &(fe_State->resolution_Zoom), &u32_one, NULL, "%u")) { fe_State->zoom_Changed = true; }
         if (fe_State->resolution_Zoom < 1) { fe_State->resolution_Zoom = 1; }
 
+        if (ImGui::BeginMenu("Screen Rotation"))
+        {
+            if (ImGui::RadioButton("0", &((int)fe_State->screen_Rotation), 0))
+                fe_State->grid_Toggled = true;
+            if (ImGui::RadioButton("90", &((int)fe_State->screen_Rotation), 90))
+                fe_State->grid_Toggled = true;
+            if (ImGui::RadioButton("180", &((int)fe_State->screen_Rotation), 180))
+                fe_State->grid_Toggled = true;
+            if (ImGui::RadioButton("270", &((int)fe_State->screen_Rotation), 270))
+                fe_State->grid_Toggled = true;
+            ImGui::EndMenu();
+        }
+
+        static ImVec4 background_color = ImVec4((float)fe_State->screen_Colors[0].r / 255.0f, (float)fe_State->screen_Colors[0].g / 255.0f, (float)fe_State->screen_Colors[0].b / 255.0f, 255.0f / 255.0f);
+        static ImVec4 foreground_color_1 = ImVec4((float)fe_State->screen_Colors[1].r / 255.0f, (float)fe_State->screen_Colors[1].g / 255.0f, (float)fe_State->screen_Colors[1].b / 255.0f, 255.0f / 255.0f);
+        static ImVec4 foreground_color_2 = ImVec4((float)fe_State->screen_Colors[2].r / 255.0f, (float)fe_State->screen_Colors[2].g / 255.0f, (float)fe_State->screen_Colors[2].b / 255.0f, 255.0f / 255.0f);
+        static ImVec4 overlap_color = ImVec4((float)fe_State->screen_Colors[3].r / 255.0f, (float)fe_State->screen_Colors[3].g / 255.0f, (float)fe_State->screen_Colors[3].b / 255.0f, 255.0f / 255.0f);
+
         if (ImGui::BeginMenu("Colors"))
         {
             ImGui::Text("Display Colors:");
@@ -190,10 +211,10 @@ void BasicUI::ShowMenuOptions()
             static bool drag_and_drop = true;
             static bool options_menu = true;
             static bool hdr = false;
-            static ImVec4 background_color = ImVec4((float)fe_State->screen_Colors[0].r / 255.0f, (float)fe_State->screen_Colors[0].g / 255.0f, (float)fe_State->screen_Colors[0].b / 255.0f, 255.0f / 255.0f);
-            static ImVec4 foreground_color_1 = ImVec4((float)fe_State->screen_Colors[1].r / 255.0f, (float)fe_State->screen_Colors[1].g / 255.0f, (float)fe_State->screen_Colors[1].b / 255.0f, 255.0f / 255.0f);
-            static ImVec4 foreground_color_2 = ImVec4((float)fe_State->screen_Colors[2].r / 255.0f, (float)fe_State->screen_Colors[2].g / 255.0f, (float)fe_State->screen_Colors[2].b / 255.0f, 255.0f / 255.0f);
-            static ImVec4 overlap_color = ImVec4((float)fe_State->screen_Colors[3].r / 255.0f, (float)fe_State->screen_Colors[3].g / 255.0f, (float)fe_State->screen_Colors[3].b / 255.0f, 255.0f / 255.0f);
+            background_color = ImVec4((float)fe_State->screen_Colors[0].r / 255.0f, (float)fe_State->screen_Colors[0].g / 255.0f, (float)fe_State->screen_Colors[0].b / 255.0f, 255.0f / 255.0f);
+            foreground_color_1 = ImVec4((float)fe_State->screen_Colors[1].r / 255.0f, (float)fe_State->screen_Colors[1].g / 255.0f, (float)fe_State->screen_Colors[1].b / 255.0f, 255.0f / 255.0f);
+            foreground_color_2 = ImVec4((float)fe_State->screen_Colors[2].r / 255.0f, (float)fe_State->screen_Colors[2].g / 255.0f, (float)fe_State->screen_Colors[2].b / 255.0f, 255.0f / 255.0f);
+            overlap_color = ImVec4((float)fe_State->screen_Colors[3].r / 255.0f, (float)fe_State->screen_Colors[3].g / 255.0f, (float)fe_State->screen_Colors[3].b / 255.0f, 255.0f / 255.0f);
             static ImVec4 backup_color;
             ImGuiColorEditFlags misc_flags = (hdr ? ImGuiColorEditFlags_HDR : 0) | (drag_and_drop ? 0 : ImGuiColorEditFlags_NoDragDrop) | (alpha_half_preview ? ImGuiColorEditFlags_AlphaPreviewHalf : (alpha_preview ? ImGuiColorEditFlags_AlphaPreview : 0)) | (options_menu ? 0 : ImGuiColorEditFlags_NoOptions);
             // Generate a default palette. The palette will persist and can be edited.
@@ -547,5 +568,56 @@ void BasicUI::ShowMenuOptions()
         ImGui::EndMenu();
     }
 
+    if (ImGui::BeginMenu("Input"))
+    {
+        if (ImGui::BeginMenu("Keypad Style"))
+        {
+            bool vip_selected = (fe_State->selected_Key_Layout == UIState::KeyLayout::VIP ? true : false);
+            bool dream_selected = (fe_State->selected_Key_Layout == UIState::KeyLayout::DREAM ? true : false);
+            bool digi_selected = (fe_State->selected_Key_Layout == UIState::KeyLayout::DIGITRAN ? true : false);
+
+            if (ImGui::MenuItem("VIP", NULL, &vip_selected))
+            {
+                if (fe_State->selected_Key_Layout != UIState::KeyLayout::VIP)
+                {
+                    fe_State->selected_Key_Layout = UIState::KeyLayout::VIP;
+                    fe_State->key_Layout_Changed = true;
+                }
+            }
+            HelpMarker("1 2 3 C\n4 5 6 D\n7 8 9 E\nA 0 B F");
+
+            if (ImGui::MenuItem("DREAM 6800", NULL, &dream_selected))
+            {
+                if (fe_State->selected_Key_Layout != UIState::KeyLayout::DREAM)
+                {
+                    fe_State->selected_Key_Layout = UIState::KeyLayout::DREAM;
+                    fe_State->key_Layout_Changed = true;
+                }
+            }
+            HelpMarker("C D E F\n8 9 A B\n4 5 6 7\n0 1 2 3");
+
+            if (ImGui::MenuItem("Digitran", NULL, &digi_selected))
+            {
+                if (fe_State->selected_Key_Layout != UIState::KeyLayout::DIGITRAN)
+                {
+                    fe_State->selected_Key_Layout = UIState::KeyLayout::DIGITRAN;
+                    fe_State->key_Layout_Changed = true;
+                }
+            }
+            HelpMarker("0 1 2 3\n4 5 6 7\n8 9 A B\nC D E F");
+
+            ImGui::EndMenu();
+        }
+
+        //if (ImGui::MenuItem("Map Keys"))
+        //{
+        //    show_key_remap = true;
+        //}
+
+        ImGui::EndMenu();
+
+
+
+    }
 
 }

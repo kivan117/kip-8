@@ -46,7 +46,10 @@
         "title": "SUBMARINE",
         "file": "Submarine [Carmelo Cortez, 1978].ch8",
         "desc": "Submarine (1978), by Carmelo Cortez<br/><br/>The Sub Game is my favorite. Press \"5\" key to fire depth charges at the subs below. You score 15 points for a small sub and 5 points for the larger. You get 25 depth charges to start.",
-		"platform": "chip8"
+		"platform": "chip8",
+		"options": {
+		    "clipQuirks":true
+		}
     },
 	"tetris":     {
         "title": "TETRIS",
@@ -389,7 +392,8 @@
             "buzzColor":"#1166DD",
             "quietColor":"#000000",
             "shiftQuirks":false,
-            "loadStoreQuirks":false
+            "loadStoreQuirks":false,
+			"clipQuirks":true
         }
     },
     "wonkypong": {
@@ -422,7 +426,8 @@
             "buzzColor":"#FFAA00",
             "quietColor":"#000000",
             "shiftQuirks":false,
-            "loadStoreQuirks":false
+            "loadStoreQuirks":false,
+			"jumpQuirks":false
         }
     },
     "mondrian": {
@@ -1510,10 +1515,9 @@
             "backgroundColor":"#111111",
             "buzzColor":"#FFAA00",
             "quietColor":"#000000",
-            "shiftQuirks":false,
-            "loadStoreQuirks":false,
-            "vfOrderQuirks":false,
-            "enableXO":false
+            "clipQuirks":true,
+			"logicQuirks":false,
+			"vBlankQuirks":false
         }
     },
     "mastermind": {
@@ -1844,5 +1848,249 @@
             "screenRotation":0,
             "maxSize":65024
         }
+    },
+	"expedition": {
+        "title":    "Expedition",
+        "authors":  ["JohnEarnest"],
+        "desc":     "A sort narrative about going outside.",
+        "event":    "Nokia 3310 Jam 3",
+        "release":  "2021-02-05",
+        "platform": "xochip",
+        "options":{
+			"tickrate":1000,
+			"fillColor":"#43523d",
+			"fillColor2":"#43523d",
+			"blendColor":"#43523d",
+			"backgroundColor":"#c7f0d8",
+			"buzzColor":"#43523d",
+			"quietColor":"#43523d",
+			"shiftQuirks":false,
+			"loadStoreQuirks":false,
+			"vfOrderQuirks":false,
+			"clipQuirks":true,
+			"vBlankQuirks":false,
+			"jumpQuirks":false,
+			"screenRotation":0,
+			"maxSize":"65024",
+			"touchInputMode":"swipe",
+			"logicQuirks":false,
+			"fontStyle":"octo",
+			"displayScale":"4"
+		}
+    },
+	"simpleraycast": {
+        "title":    "Simple Raycast",
+        "authors":  ["AKouZ1"],
+        "desc":     "A simple raycast program",
+        "event":    "OctoJam 5",
+        "release":  "2018-10-01",
+        "platform": "xochip",
+        "options": {
+            "tickrate":50000,
+            "fillColor":"#555555",
+            "fillColor2":"#AAAAAA",
+            "blendColor":"#FFFFFF",
+            "backgroundColor":"#000000",
+            "buzzColor":"#888888",
+            "quietColor":"#000000",
+            "shiftQuirks":false,
+            "loadStoreQuirks":false,
+            "vfOrderQuirks":false,
+            "clipQuirks":false,
+            "vBlankQuirks":false,
+            "jumpQuirks":false,
+            "screenRotation":0,
+            "maxSize":65024
+        }
+    },
+	"digsite": {
+        "title":    "Dig Site 8",
+        "authors":  ["your name here", "taqueso"],
+        "desc":     "Tech demo",
+        "event":    "OctoJam 5",
+        "release":  "2018-10-01",
+        "platform": "xochip",
+        "options": {
+            "tickrate":5000,
+            "fillColor":"#212946",
+            "fillColor2":"#6186A9",
+            "blendColor":"#921B30",
+            "backgroundColor":"#163A5C",
+            "buzzColor":"#000000",
+            "quietColor":"#000000",
+            "shiftQuirks":false,
+            "loadStoreQuirks":false,
+            "vfOrderQuirks":false,
+            "clipQuirks":false,
+            "vBlankQuirks":false,
+            "jumpQuirks":false,
+            "screenRotation":0,
+            "maxSize":65024
+        }
+    },
+	"duelf8s": {
+        "title":    "Duel of the F8s",
+        "authors":  ["Chromatophore"],
+        "desc":     "Unfinished Star Wars game. A chance to rewrite history for a better today.",
+        "event":    "OctoJam 6",
+        "release":  "2019-11-01",
+        "platform": "xochip",
+        "options": {
+			"tickrate":1000,
+			"fillColor":"#000000",
+			"fillColor2":"#FF0000",
+			"blendColor":"#00FF00",
+			"backgroundColor":"#777777",
+			"buzzColor":"#ffffff",
+			"quietColor":"#333333",
+			"shiftQuirks":0,
+			"loadStoreQuirks":0,
+			"vfOrderQuirks":0,
+			"clipQuirks":0,
+			"vBlankQuirks":0,
+			"jumpQuirks":0,
+			"screenRotation":0,
+			"maxSize":65024
+		}
+    },
+	"dumptrump": {
+        "title":    "Dump Trump",
+        "authors":  ["Michael Wales"],
+        "desc":     "Do your patriotic duty.",
+        "event":    "OctoJam 6",
+        "release":  "2019-11-01",
+        "platform": "xochip",
+        "options": {
+            "tickrate":500,
+            "fillColor":"#FFCC00",
+            "fillColor2":"#FF6600",
+            "blendColor":"#662200",
+            "backgroundColor":"#996600",
+            "buzzColor":"#FFAA00",
+            "quietColor":"#000000",
+            "shiftQuirks":false,
+            "loadStoreQuirks":false,
+            "vfOrderQuirks":false,
+            "clipQuirks":true,
+            "jumpQuirks":false,
+            "enableXO":false,
+            "screenRotation":0
+        }
+    },
+	"akir8": {
+        "title":    "AKIR8",
+        "authors":  ["TomR"],
+        "desc":     "AKIR8 is a game based on the movie AKIRA.",
+        "event":    "OctoJam 7",
+        "release":  "2020-10-03",
+        "platform": "xochip",
+        "options":{
+			"tickrate":100,
+			"fillColor":"#666666",
+			"fillColor2":"#FFFFFF",
+			"blendColor":"#FFFFFF",
+			"backgroundColor":"#000000",
+			"buzzColor":"#FFFFFF",
+			"quietColor":"#000000",
+			"shiftQuirks":false,
+			"loadStoreQuirks":false,
+			"vfOrderQuirks":false,
+			"clipQuirks":true,
+			"vBlankQuirks":false,
+			"jumpQuirks":false,
+			"screenRotation":0,
+			"maxSize":65024,
+			"touchInputMode":"gamepad",
+			"logicQuirks":false,
+			"fontStyle":"octo",
+			"displayScale":"6"
+		}
+    },
+	"labyrinthine": {
+        "title":    "Labyrinthine",
+        "authors":  ["TempVar Studios"],
+        "desc":     "Welcome to the labyrinth!",
+        "event":    "OctoJam 7",
+        "release":  "2020-10-09",
+        "platform": "xochip",
+        "options":{
+			"tickrate":20,
+			"fillColor":"#ffffff",
+			"fillColor2":"#ffffff",
+			"blendColor":"#ffffff",
+			"backgroundColor":"#000000",
+			"buzzColor":"#ffffff",
+			"quietColor":"#000000",
+			"shiftQuirks":false,
+			"loadStoreQuirks":false,
+			"vfOrderQuirks":false,
+			"clipQuirks":false,
+			"vBlankQuirks":false,
+			"jumpQuirks":false,
+			"screenRotation":0,
+			"maxSize":65024,
+			"touchInputMode":"vip",
+			"logicQuirks":false,
+			"fontStyle":"vip",
+			"displayScale":"4"
+			}
+    },
+	"d8gn": {
+        "title":    "D8GN",
+        "authors":  ["SystemLogoff"],
+        "desc":     "A demake of the famous Dicey Dungeons for the elderly Chip8 console",
+        "event":    "OctoJam 7",
+        "release":  "2020-10-26",
+        "platform": "xochip",
+		"options":{
+			"tickrate":100,
+			"fillColor":"#332c50",
+			"fillColor2":"#bf4646",
+			"blendColor":"#73c7d3",
+			"backgroundColor":"#e2f3e4",
+			"buzzColor":"#0c0c0c",
+			"quietColor":"#0c0c0c",
+			"shiftQuirks":false,
+			"loadStoreQuirks":false,
+			"vfOrderQuirks":false,
+			"clipQuirks":true,
+			"vBlankQuirks":false,
+			"jumpQuirks":false,
+			"screenRotation":0,
+			"maxSize":65024,
+			"touchInputMode":"gamepad",
+			"logicQuirks":false,
+			"fontStyle":"octo",
+			"displayScale":"6"
+		}
+    },
+	"octospaceprogram": {
+        "title":    "Octo Space Program",
+        "authors":  ["rozisdead"],
+        "desc":     "Build ever bigger rockets and explore the solar system!",
+        "event":    "OctoJam 7",
+        "release":  "2020-10-31",
+        "platform": "xochip",
+		"options":{
+			"tickrate":200,
+			"fillColor":"#00aeff",
+			"fillColor2":"#ffffff",
+			"blendColor":"#ffffff",
+			"backgroundColor":"#000d14",
+			"buzzColor":"#000d14",
+			"quietColor":"#000000",
+			"shiftQuirks":false,
+			"loadStoreQuirks":false,
+			"vfOrderQuirks":false,
+			"clipQuirks":false,
+			"vBlankQuirks":false,
+			"jumpQuirks":false,
+			"screenRotation":270,
+			"maxSize":"65024",
+			"touchInputMode":"none",
+			"logicQuirks":false,
+			"fontStyle":"octo",
+			"displayScale":"4"
+		}
     }
 }

@@ -1,9 +1,8 @@
 //Using SDL and standard IO
-#pragma warning(push, 0)
-#include "cxxopts.hpp"
-#pragma warning(pop)
+#include "CLI11.hpp"
 #include "Chip8.h"
 #include "SDLFrontEnd.h"
+#include <iostream>
 
 
 int main(int argc, char* argv[])
@@ -13,38 +12,16 @@ int main(int argc, char* argv[])
 	std::string filename = "";
 	bool enableGUI = false, enableChip8 = true, enableSuperChip = false, enableXOChip = false; //enableOcto = false;
 	int CPUSpeed = 9;
-	cxxopts::Options options("KIP-8", "Cross platform CHIP-8 emulator");
-	options.add_options()
-		("r,rom", "Input rom file name", cxxopts::value<std::string>(filename))
-		("g,GUI", "Enable GUI", cxxopts::value<bool>(enableGUI)->default_value("false"))
-		("C,Chip-8", "Set system mode to Chip-8", cxxopts::value<bool>(enableChip8)->default_value("true"))
-		("S,Super-Chip", "Set system mode to Super-Chip", cxxopts::value<bool>(enableSuperChip)->default_value("false"))
-		("X,XO-Chip", "Set system mode to XO-Chip", cxxopts::value<bool>(enableXOChip)->default_value("false"))
-		("s,speed", "Set CPU cycles per frame", cxxopts::value<int>(CPUSpeed)->default_value("9"))
-		("h,help", "Print usage")
-		;
-	try
-	{
-		auto result = options.parse(argc, argv);
-		if (result.count("help"))
-		{
-			std::cout << options.help() << std::endl;
-			exit(0);
-		}
-	}
-	catch (const cxxopts::option_not_exists_exception& e)
-	{
-		std::cerr << "Unrecognized option." << std::endl;
-		std::cerr << e.what() << std::endl;		
-		std::cout << options.help() << std::endl;
-		exit(0);
-	}
-	catch (const cxxopts::OptionParseException& e)
-	{
-		std::cerr << e.what() << std::endl;
-		exit(0);
-	}
+	
+	CLI::App app{"Cross platform CHIP-8 interpreter"};
 
+	app.add_option("-r,--rom", filename, "Input rom file name");
+	app.add_flag("-g,--GUI", enableGUI, "Enable Full GUI");
+	app.add_flag("-C,--Chip-8", enableChip8, "Set system mode to Chip-8");
+	app.add_flag("-S,--Super-Chip", enableSuperChip, "Set system mode to Super-Chip");
+	app.add_flag("-X,--XO-Chip", enableXOChip, "Set system mode to XO-Chip");
+	app.add_option("-s,--speed", CPUSpeed, "Set CPU cycles per frame");
+	CLI11_PARSE(app, argc, argv);
 
 	Chip8* core = new Chip8();
 
